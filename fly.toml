@@ -1,3 +1,0 @@
-app = "the-archivist"
-[env]
-PORT = "8080"
