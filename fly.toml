@@ -1,7 +1,7 @@
 app = "the-archivist"
 
 [build]
-  image = "Dockerfile"
+  dockerfile = "Dockerfile"
 
 [env]
   # Не указываем тут токен, лучше добавить через команду fly secrets set BOT_TOKEN=твой_токен
