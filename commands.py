@@ -96,7 +96,7 @@ async def handle_vruchit(message: types.Message):
 
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
     if author_id != KURATOR_ID and author_id not in permissions:
-    await message.reply("У тебя нет ключа от сейфа.")
+        await message.reply("У тебя нет ключа от сейфа.")
         return
 
     # 1. Если это ответ на сообщение
