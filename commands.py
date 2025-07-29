@@ -57,7 +57,7 @@ async def handle_vruchit(message: types.Message):
             return
         recipient = message.reply_to_message.from_user
         change_balance(recipient.id, amount, "без причины", author_id)
-        await message.reply(f"Вручил {amount} нуаров @{recipient.username or recipient.full_name}")
+        await message.reply(f"Я выдал {amount} нуаров @{recipient.username or recipient.full_name}")
         return
 
     # 2. Вручение по @username
@@ -73,10 +73,10 @@ async def handle_vruchit(message: types.Message):
         return
     member = await find_member_by_username(message, username)
     if not member:
-        await message.reply(f"Пользователь @{username} не найден.")
+        await message.reply(f"Я не могу найти @{username}.")
         return
     change_balance(member.user.id, amount, "без причины", author_id)
-    await message.reply(f"Вручил @{username} {amount} нуаров")
+    await message.reply(f"Я выдал @{username} {amount} нуаров")
 
 
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
@@ -93,7 +93,7 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
             return
         recipient = message.reply_to_message.from_user
         change_balance(recipient.id, -amount, "без причины", author_id)
-        await message.reply(f"Отнял {amount} нуаров у @{recipient.username or recipient.full_name}")
+        await message.reply(f"Я взыскал {amount} нуаров у @{recipient.username or recipient.full_name}")
         return
 
     # 2. Если указан username
@@ -109,10 +109,10 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
         return
     member = await find_member_by_username(message, username)
     if not member:
-        await message.reply(f"Пользователь @{username} не найден.")
+        await message.reply(f"Я не могу найти @{username}.")
         return
     change_balance(member.user.id, -amount, "без причины", author_id)
-    await message.reply(f"Отнял у @{username} {amount} нуаров.")
+    await message.reply(f"Я взыскал у @{username} {amount} нуаров.")
 
 
 
