@@ -8,10 +8,3 @@ app = "the-archivist"
   # но если хочешь, можно прописать напрямую:
   # BOT_TOKEN = "твой_токен_сюда"
 
-[[services]]
-  internal_port = 8080
-  protocol = "tcp"
-
-  [[services.ports]]
-    port = 8080
-    handlers = ["http"]
