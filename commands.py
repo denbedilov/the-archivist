@@ -8,6 +8,8 @@ from db import (
 KURATOR_ID = 164059195
 
 async def handle_message(message: types.Message):
+    if not message.text:
+        return
     text = message.text.lower().strip()
     author_id = message.from_user.id
 
@@ -58,8 +60,8 @@ async def handle_message(message: types.Message):
         else:
             await message.reply("Я не знаю кто это.")
 
-    # Неизвестная команда - не отвечает или можно добавить:
-    # await message.reply("Неизвестная команда.")
+    else:
+        return
 
 
 async def handle_vruchit(message: types.Message):
