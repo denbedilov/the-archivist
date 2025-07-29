@@ -25,7 +25,7 @@ async def handle_message(message: types.Message):
         if text.startswith("вручить "):
             await handle_vruchit(message)
             return
-        if text.startswith("отнять "):
+        if text.startswith("взыскать "):
             await handle_otnyat(message, text, author_id)
             return
 
@@ -56,10 +56,12 @@ async def handle_message(message: types.Message):
         target_id = message.reply_to_message.from_user.id
         role_info = await get_role(target_id)
         if role_info:
-            await message.reply(f"Это же: {role_info}")
+            await message.reply(f"{role_info}")
         else:
             await message.reply("Я не знаю кто это.")
-
+    if text == "список команд":
+        await handle_list(message)
+        return
 
     return
 
@@ -107,10 +109,10 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
 
     # Отнять по ответу на сообщение
     if message.reply_to_message:
-        pattern = r"отнять\s+(\d+)"
+        pattern = r"взыскать\s+(\d+)"
         m = re.match(pattern, text, re.IGNORECASE)
         if not m:
-            await message.reply("Обращение не по этикету Клуба. Пример: 'отнять 3'")
+            await message.reply("Обращение не по этикету Клуба. Пример: 'взыскать 3'")
             return
         amount = int(m.group(1))
         if amount <= 0:
@@ -122,7 +124,7 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
         return
 
     # Отнять по юзернейму
-    pattern = r"отнять\s+@(\w+)\s+(\d+)"
+    pattern = r"взыскать\s+@(\w+)\s+(\d+)"
     m = re.match(pattern, text)
     if not m:
         await message.reply("Я не совсем понял.")
@@ -197,6 +199,15 @@ async def handle_moya_rol(message: types.Message):
         await message.reply("У Вас пока нет роли.")
     else:
         await message.reply(f"Ваша роль: {role_info['role']}\nОписание: {role_info['description']}")
+
+async def handle_pomosh(message: types.Message):
+    try:
+        with open("Список команд.txt", "r", encoding="utf-8") as file:
+            help_text = file.read()
+        await message.reply(help_text)
+    except Exception as e:
+        print(f"Ошибка при чтении help.txt: {e}")
+        await message.reply("Не удалось загрузить список команд.")
 
 
 async def find_member_by_username(message: types.Message, username: str):
