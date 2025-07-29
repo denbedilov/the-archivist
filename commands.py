@@ -45,11 +45,18 @@ async def handle_message(message: types.Message):
     # Команды, доступные всем
     if text == "карман":
         bal = await get_balance(author_id)
-        await message.reply(f"У тебя в кармане {bal} нуаров.")
+        await message.reply(f"У Вас в кармане {bal} нуаров.")
         return
     if text == "моя роль":
         await handle_moya_rol(message)
         return
+    elif text == "роль" and message.reply_to_message:
+        target_id = message.reply_to_message.from_user.id
+        role_info = await get_role(target_id)
+        if role_info:
+            await message.reply(f"Это же: {role_info}")
+        else:
+            await message.reply("Я не знаю кто это.")
 
     # Неизвестная команда - не отвечает или можно добавить:
     # await message.reply("Неизвестная команда.")
