@@ -20,7 +20,6 @@ async def on_message(message: types.Message):
         await handle_message(message)
     except Exception as e:
         print(f"Ошибка в обработке сообщения: {e}")
-        await message.reply("Что-то пошло не так. Куратор всё видит.")
 
 async def main():
     await init_db()  # Инициализация базы при старте

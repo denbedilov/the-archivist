@@ -18,10 +18,10 @@ async def handle_message(message: types.Message):
         return
 
     # Проверяем, есть ли у автора ключ (полномочия)
-    has_key = (author_id == KURATOR_ID) or await has_key(author_id)
+    user_has_key = (author_id == KURATOR_ID) or await has_key(author_id)
 
     # Команды, доступные только куратору и обладателям ключа
-    if has_key:
+    if user_has_key:
         if text.startswith("вручить "):
             await handle_vruchit(message)
             return
@@ -45,7 +45,7 @@ async def handle_message(message: types.Message):
             return
 
     # Команды, доступные всем
-    if text == "карман":
+    if text == "мой карман":
         bal = await get_balance(author_id)
         await message.reply(f"У Вас в кармане {bal} нуаров.")
         return
