@@ -200,7 +200,7 @@ async def handle_moya_rol(message: types.Message):
     else:
         await message.reply(f"Ваша роль: {role_info['role']}\nОписание: {role_info['description']}")
 
-async def handle_pomosh(message: types.Message):
+async def handle_list(message: types.Message):
     try:
         with open("Список команд.txt", "r", encoding="utf-8") as file:
             help_text = file.read()
