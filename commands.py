@@ -18,12 +18,15 @@ def change_balance(user_id, amount, reason, author_id):
         "author_id": author_id
     })
 
-async def handle_message(message: types.Message, dp):
+async def handle_message(message: types.Message):
+    if message.from_user.id == message.bot.id:
+        return
+
     text = message.text.lower().strip()
     author_id = message.from_user.id
 
     if text.startswith("вручить "):
-        await handle_vruchit(message, text, author_id)
+        await handle_vruchit(message)
     elif text.startswith("отнять "):
         await handle_otnyat(message, text, author_id)
     elif text == "карман":
@@ -42,12 +45,13 @@ async def handle_vruchit(message: types.Message):
 
     # 1. Попытка распознать как ответ на сообщение
     if message.reply_to_message:
-        pattern = r"вручить\s+(\d+)\s*нуаров?\s*(.*)"
+        pattern = r"вручить\s+(\d+)\s*(нуаров?|)?\s*(.*)"
         m = re.match(pattern, text, re.IGNORECASE)
         if not m:
             await message.reply("Неверный формат. Пример: 'вручить 5 нуаров за помощь'")
             return
         amount_str, reason = m.groups()
+        reason = reason.strip() if reason else "без причины"
         amount = int(amount_str)
         if amount <= 0:
             await message.reply("Количество должно быть положительным.")
@@ -74,6 +78,7 @@ async def handle_vruchit(message: types.Message):
         return
     change_balance(member.user.id, amount, reason, author_id)
     await message.reply(f"Вручил @{username} {amount} нуаров за '{reason}'")
+
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
     pattern = r"отнять\s+@(\w+)\s+(\d+)\s*(.*)"
     m = re.match(pattern, text)

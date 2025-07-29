@@ -16,7 +16,7 @@ dp = Dispatcher()
 
 @dp.message()
 async def on_message(message: types.Message):
-    await handle_message(message, dp)
+    await handle_message(message)
 
 async def main():
     await dp.start_polling(bot)
