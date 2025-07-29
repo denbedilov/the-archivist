@@ -80,10 +80,27 @@ async def handle_vruchit(message: types.Message):
 
 
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
+    # 1. Если это ответ на сообщение
+    if message.reply_to_message:
+        pattern = r"отнять\s+(\d+)"
+        m = re.match(pattern, text, re.IGNORECASE)
+        if not m:
+            await message.reply("Неверный формат. Пример: 'отнять 3'")
+            return
+        amount = int(m.group(1))
+        if amount <= 0:
+            await message.reply("Количество должно быть положительным.")
+            return
+        recipient = message.reply_to_message.from_user
+        change_balance(recipient.id, -amount, "без причины", author_id)
+        await message.reply(f"Отнял {amount} нуаров у @{recipient.username or recipient.full_name}")
+        return
+
+    # 2. Если указан username
     pattern = r"отнять\s+@(\w+)\s+(\d+)"
-    m = re.match(pattern, text, re.IGNORECASE)
+    m = re.match(pattern, text)
     if not m:
-        await message.reply("Неверный формат. Пример: 'отнять @username 5'")
+        await message.reply("Неверный формат команды отнять.")
         return
     username, amount_str = m.groups()
     amount = int(amount_str)
@@ -95,7 +112,8 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
         await message.reply(f"Пользователь @{username} не найден.")
         return
     change_balance(member.user.id, -amount, "без причины", author_id)
-    await message.reply(f"Отнял у @{username} {amount} нуаров")
+    await message.reply(f"Отнял у @{username} {amount} нуаров.")
+
 
 
 async def show_history(message: types.Message):
