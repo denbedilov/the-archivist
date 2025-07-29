@@ -50,13 +50,24 @@ async def handle_message(message: types.Message):
         await message.reply(f"У Вас в кармане {bal} нуаров.")
         return
     if text == "моя роль":
-        await handle_moya_rol(message)
+        role_info = await get_role(author_id)
+        if role_info:
+            role = role_info["role"]
+            description = role_info["description"]
+            await message.reply(f"Ваша роль: *{role}*\n_{description}_", parse_mode="Markdown")
+        else:
+            await message.reply("Я вас не узнаю.")
         return
+
     if text == "роль" and message.reply_to_message:
         target_id = message.reply_to_message.from_user.id
         role_info = await get_role(target_id)
+
         if role_info:
-            await message.reply(f"{role_info}")
+            role = role_info.get("role", "Без названия")
+            desc = role_info.get("description", "")
+            text_response = f"🎭 *{role}*\n\n_{desc}_"
+            await message.reply(text_response, parse_mode="Markdown")
         else:
             await message.reply("Я не знаю кто это.")
     if text == "список команд":
