@@ -1,6 +1,6 @@
 import aiosqlite
 
-DB_PATH = "bot_data.sqlite"
+DB_PATH = "/data/bot_data.sqlite"
 
 # --- Инициализация базы (вызывать при старте бота) ---
 async def init_db():
