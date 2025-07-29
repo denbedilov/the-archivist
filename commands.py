@@ -52,7 +52,7 @@ async def handle_message(message: types.Message):
 
 async def handle_vruchit(message: types.Message):
     if author_id != KURATOR_ID and author_id not in permissions:
-    await message.reply("У тебя нет ключа от сейфа.")
+        await message.reply("У тебя нет ключа от сейфа.")
         return
 
     text = message.text.strip()
