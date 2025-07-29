@@ -212,9 +212,9 @@ async def handle_moya_rol(message: types.Message):
     user_id = message.from_user.id
     role_info = await get_role(user_id)
     if not role_info:
-        await message.reply("У тебя пока нет роли.")
+        await message.reply("У вас пока нет роли.")
     else:
-        await message.reply(f"Твоя роль: {role_info['role']}\nОписание: {role_info['description']}")
+        await message.reply(f"Ваша роль: {role_info['role']}\nОписание: {role_info['description']}")
 
 
 async def find_member_by_username(message: types.Message, username: str):
