@@ -16,7 +16,11 @@ dp = Dispatcher()
 
 @dp.message()
 async def on_message(message: types.Message):
-    await handle_message(message)
+    try:
+        await handle_message(message)
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        await message.reply("Хм. Что-то не так. Куратор всё видит.")
 
 async def main():
     await dp.start_polling(bot)
