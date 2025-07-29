@@ -66,10 +66,6 @@ async def handle_message(message: types.Message):
 
 async def handle_vruchit(message: types.Message):
     author_id = message.from_user.id
-    if author_id != KURATOR_ID and not await has_key(author_id):
-        await message.reply("У вас нет ключа от сейфа.")
-        return
-
     text = message.text.strip()
 
     # Вручение по ответу на сообщение
@@ -77,11 +73,11 @@ async def handle_vruchit(message: types.Message):
         pattern = r"вручить\s+(\d+)"
         m = re.match(pattern, text, re.IGNORECASE)
         if not m:
-            await message.reply("Неверный формат. Пример: 'вручить 5'")
+            await message.reply("Обращение не по этикету Клуба. Пример: 'вручить 5'")
             return
         amount = int(m.group(1))
         if amount <= 0:
-            await message.reply("Количество должно быть положительным.")
+            await message.reply("Я не могу выдать минус.")
             return
         recipient = message.reply_to_message.from_user
         await change_balance(recipient.id, amount, "без причины", author_id)
@@ -92,12 +88,12 @@ async def handle_vruchit(message: types.Message):
     pattern = r"вручить\s+@(\w+)\s+(\d+)"
     m = re.match(pattern, text, re.IGNORECASE)
     if not m:
-        await message.reply("Неверный формат. Пример: 'вручить @username 5'")
+        await message.reply("Обращение не по этикету Клуба. Пример: 'вручить @username 5'")
         return
     username, amount_str = m.groups()
     amount = int(amount_str)
     if amount <= 0:
-        await message.reply("Количество должно быть положительным.")
+        await message.reply("Я не могу выдать минус.")
         return
     member = await find_member_by_username(message, username)
     if not member:
@@ -108,20 +104,17 @@ async def handle_vruchit(message: types.Message):
 
 
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
-    if author_id != KURATOR_ID and not await has_key(author_id):
-        await message.reply("У вас нет ключа от сейфа.")
-        return
 
     # Отнять по ответу на сообщение
     if message.reply_to_message:
         pattern = r"отнять\s+(\d+)"
         m = re.match(pattern, text, re.IGNORECASE)
         if not m:
-            await message.reply("Неверный формат. Пример: 'отнять 3'")
+            await message.reply("Обращение не по этикету Клуба. Пример: 'отнять 3'")
             return
         amount = int(m.group(1))
         if amount <= 0:
-            await message.reply("Количество должно быть положительным.")
+            await message.reply("Я не могу взыскать отрицательное количество.")
             return
         recipient = message.reply_to_message.from_user
         await change_balance(recipient.id, -amount, "без причины", author_id)
@@ -132,12 +125,12 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
     pattern = r"отнять\s+@(\w+)\s+(\d+)"
     m = re.match(pattern, text)
     if not m:
-        await message.reply("Неверный формат команды отнять.")
+        await message.reply("Я не совсем понял.")
         return
     username, amount_str = m.groups()
     amount = int(amount_str)
     if amount <= 0:
-        await message.reply("Количество должно быть положительным.")
+        await message.reply("Я не могу взыскать отрицательное количество.")
         return
     member = await find_member_by_username(message, username)
     if not member:
@@ -149,21 +142,17 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
 
 async def handle_naznachit(message: types.Message):
     author_id = message.from_user.id
-    if author_id != KURATOR_ID:
-        await message.reply("Только куратор может назначать роли.")
-        return
-
     text = message.text.strip()
     # Формат: назначить "название роли" описание роли
     pattern = r'назначить\s+"([^"]+)"\s+(.+)'
     m = re.match(pattern, text, re.IGNORECASE)
     if not m:
-        await message.reply('Неверный формат. Пример: назначить "Роль" описание роли')
+        await message.reply('Я не совсем понял')
         return
     role_name, role_desc = m.groups()
 
     if not message.reply_to_message:
-        await message.reply("Команда должна быть в ответ на сообщение пользователя, которому назначаем роль.")
+        await message.reply("Кому мне выдать роль, Куратор?")
         return
 
     user_id = message.reply_to_message.from_user.id
@@ -173,11 +162,8 @@ async def handle_naznachit(message: types.Message):
 
 async def handle_snyat_rol(message: types.Message):
     author_id = message.from_user.id
-    if author_id != KURATOR_ID:
-        await message.reply("Только куратор может снимать роли.")
-        return
     if not message.reply_to_message:
-        await message.reply("Команда должна быть в ответ на сообщение пользователя.")
+        await message.reply("Но кого мне лишить роли, Куратор?")
         return
     user_id = message.reply_to_message.from_user.id
     await set_role(user_id, None, None)
@@ -186,11 +172,8 @@ async def handle_snyat_rol(message: types.Message):
 
 async def handle_kluch(message: types.Message):
     author_id = message.from_user.id
-    if author_id != KURATOR_ID:
-        await message.reply("Только куратор может выдавать ключи.")
-        return
     if not message.reply_to_message:
-        await message.reply("Команда должна быть в ответ на сообщение пользователя.")
+        await message.reply("Кому мне выдать ключ, Куратор?")
         return
     user_id = message.reply_to_message.from_user.id
     await grant_key(user_id)
@@ -199,22 +182,19 @@ async def handle_kluch(message: types.Message):
 
 async def handle_snyat_kluch(message: types.Message):
     author_id = message.from_user.id
-    if author_id != KURATOR_ID:
-        await message.reply("Только куратор может снимать ключи.")
-        return
     if not message.reply_to_message:
-        await message.reply("Команда должна быть в ответ на сообщение пользователя.")
+        await message.reply("У кого мне отобрать ключ, Куратор?")
         return
     user_id = message.reply_to_message.from_user.id
     await revoke_key(user_id)
-    await message.reply(f"Ключ от сейфа снят у @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
+    await message.reply(f"Ключ от сейфа отнят у @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
 
 
 async def handle_moya_rol(message: types.Message):
     user_id = message.from_user.id
     role_info = await get_role(user_id)
     if not role_info:
-        await message.reply("У вас пока нет роли.")
+        await message.reply("У Вас пока нет роли.")
     else:
         await message.reply(f"Ваша роль: {role_info['role']}\nОписание: {role_info['description']}")
 
