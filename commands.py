@@ -36,11 +36,32 @@ async def handle_message(message: types.Message, dp):
     else:
         pass
 
-async def handle_vruchit(message: types.Message, text: str, author_id: int):
-    pattern = r"вручить\s+@(\w+)\s+(\d+)\s*(.*)"
-    m = re.match(pattern, text)
+async def handle_vruchit(message: types.Message):
+    text = message.text.strip()
+    author_id = message.from_user.id
+
+    # 1. Попытка распознать как ответ на сообщение
+    if message.reply_to_message:
+        pattern = r"вручить\s+(\d+)\s*нуаров?\s*(.*)"
+        m = re.match(pattern, text, re.IGNORECASE)
+        if not m:
+            await message.reply("Неверный формат. Пример: 'вручить 5 нуаров за помощь'")
+            return
+        amount_str, reason = m.groups()
+        amount = int(amount_str)
+        if amount <= 0:
+            await message.reply("Количество должно быть положительным.")
+            return
+        recipient = message.reply_to_message.from_user
+        change_balance(recipient.id, amount, reason, author_id)
+        await message.reply(f"Вручил {amount} нуаров @{recipient.username or recipient.full_name} за '{reason}'")
+        return
+
+    # 2. Попытка распознать с юзернеймом
+    pattern = r"вручить\s+@(\w+)\s+(\d+)\s*нуаров?\s*(.*)"
+    m = re.match(pattern, text, re.IGNORECASE)
     if not m:
-        await message.reply("Неверный формат команды вручить.")
+        await message.reply("Неверный формат. Пример: 'вручить @username 5 нуаров за помощь'")
         return
     username, amount_str, reason = m.groups()
     amount = int(amount_str)
@@ -52,8 +73,7 @@ async def handle_vruchit(message: types.Message, text: str, author_id: int):
         await message.reply(f"Пользователь @{username} не найден.")
         return
     change_balance(member.user.id, amount, reason, author_id)
-    await message.reply(f"Вручил @{username} {amount} нуаров за '{reason}'.")
-
+    await message.reply(f"Вручил @{username} {amount} нуаров за '{reason}'")
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
     pattern = r"отнять\s+@(\w+)\s+(\d+)\s*(.*)"
     m = re.match(pattern, text)
