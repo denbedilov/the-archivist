@@ -7,8 +7,8 @@ WORKDIR /app
 # Копируем файлы проекта внутрь контейнера
 COPY . .
 
-# Устанавливаем зависимости
-RUN pip install --no-cache-dir aiogram python-dotenv
+# Устанавливаем зависимости из requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Устанавливаем переменную окружения для Python (необязательно)
 ENV PYTHONUNBUFFERED=1
