@@ -102,8 +102,8 @@ async def handle_message(message: types.Message):
             await handle_snyat_kluch(message)
             return
         if text == "Обнулить клуб":
-    await handle_clear_db(message)
-    return
+            await handle_clear_db(message)
+            return
 
     return
 
