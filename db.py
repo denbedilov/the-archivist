@@ -8,7 +8,9 @@ async def init_db():
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
-                balance INTEGER DEFAULT 0
+                balance INTEGER DEFAULT 0,
+                role TEXT,
+                description TEXT,
                 has_key INTEGER DEFAULT 0
             )
         """)
