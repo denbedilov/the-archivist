@@ -101,7 +101,7 @@ async def handle_message(message: types.Message):
         if text == "снять ключ" and message.reply_to_message:
             await handle_snyat_kluch(message)
             return
-        if text == "Обнулить клуб":
+        if text == "обнулить клуб":
             await handle_clear_db(message)
             return
 
