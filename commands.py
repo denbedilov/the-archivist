@@ -3,7 +3,7 @@ from aiogram import types
 from db import (
     get_balance, change_balance, set_role, get_role,
     grant_key, revoke_key, has_key, get_last_history,
-    get_top_users
+    get_top_users, get_all_roles
 )
 
 KURATOR_ID = 164059195
@@ -29,6 +29,9 @@ async def handle_message(message: types.Message):
         if text.startswith("взыскать "):
             await handle_otnyat(message, text, author_id)
             return
+        if text == "члены клуба":
+            await handle_club_members(message)
+            return    
 
     # Только куратор — команды управления ролями и ключами
     if author_id == KURATOR_ID:
@@ -227,4 +230,27 @@ async def handle_rating(message: types.Message):
 
         text += f"{i}. <a href='tg://user?id={user_id}'>{name}</a> — {balance} нуаров\n"
 
+    await message.reply(text, parse_mode="HTML")
+
+async def handle_club_members(message: types.Message):
+    rows = await get_all_roles()
+    if not rows:
+        await message.reply("Пока что в клубе пусто.")
+        return
+
+    lines = []
+    for user_id, role in rows:
+        # Получаем username, если он есть
+        try:
+            user = await message.bot.get_chat_member(message.chat.id, user_id)
+            if user.user.username:
+                mention = f"@{user.user.username}"
+            else:
+                mention = f"<a href='tg://user?id={user_id}'>Участник</a>"
+        except:
+            mention = f"<a href='tg://user?id={user_id}'>Участник</a>"
+
+        lines.append(f"{mention} — <b>{role}</b>")
+
+    text = "🎭 <b>Члены клуба:</b>\n\n" + "\n".join(lines)
     await message.reply(text, parse_mode="HTML")

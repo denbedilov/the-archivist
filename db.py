@@ -110,3 +110,11 @@ async def get_top_users(limit: int = 10):
             LIMIT ?
         """, (limit,)) as cursor:
             return await cursor.fetchall()
+
+async def get_all_roles():
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("""
+            SELECT user_id, role FROM roles
+            WHERE role IS NOT NULL AND TRIM(role) != ''
+        """) as cursor:
+            return await cursor.fetchall()
