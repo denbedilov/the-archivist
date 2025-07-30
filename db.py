@@ -64,8 +64,8 @@ async def set_role(user_id: int, role: str, description: str):
     async with aiosqlite.connect(DB_PATH) as db:
         # Вставляем или обновляем
         await db.execute("""
-            INSERT INTO roles (user_id, role, role_description) VALUES (?, ?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET role = excluded.role, role_description = excluded.role_description
+            INSERT INTO roles (user_id, role, description) VALUES (?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET role = excluded.role, description = excluded.description
         """, (user_id, role, description))
         await db.commit()
 
