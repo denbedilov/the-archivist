@@ -1,5 +1,7 @@
 import re
 import os
+import sys
+import aiosqlite
 from aiogram import types
 from db import (
     get_balance, change_balance, set_role, get_role,
@@ -262,17 +264,24 @@ async def handle_club_members(message: types.Message):
     await message.reply(text, parse_mode="HTML")
 
 
-async def handle_clear_db(message: types.Message):
-    author_id = message.from_user.id
-    if author_id != KURATOR_ID:
-        await message.reply("У вас нет прав для этой команды.")
+async def handle_clear_db(message):
+    # Только куратор (по ID) может обнулить клуб
+    if message.from_user.id != 164059195:
+        await message.reply("Только куратор может обнулить клуб.")
         return
-    
-    if os.path.exists(DB_PATH):
-        try:
-            os.remove(DB_PATH)
-            await message.reply("База данных успешно очищена! Бот перезапустится с чистой базой.")
-        except Exception as e:
-            await message.reply(f"Ошибка при удалении базы: {e}")
-    else:
-        await message.reply("Файл базы данных не найден — база уже чистая.")
+
+    # Удаляем файл базы данных
+    try:
+        await message.reply("Клуб обнуляется...")
+
+        # Закрываем соединения и удаляем файл
+        if os.path.exists("/data/bot_data.sqlite"):
+            os.remove("/data/bot_data.sqlite")
+
+        await message.answer("Код Армагедон. Клуб обнулен. Теперь только я и вы, Куратор.")
+
+        # Перезапускаем процесс
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    except Exception as e:
+        await message.reply(f"Ошибка при обнулении: {e}")
