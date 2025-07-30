@@ -25,6 +25,7 @@ async def init_db():
                 user_id INTEGER,
                 amount INTEGER,
                 reason TEXT,
+                author_id INTEGER,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)

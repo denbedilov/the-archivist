@@ -2,6 +2,7 @@ import re
 import os
 import sys
 import aiosqlite
+import asyncio
 from aiogram import types
 from db import (
     get_balance, change_balance, set_role, get_role,
@@ -104,6 +105,7 @@ async def handle_message(message: types.Message):
             await handle_snyat_kluch(message)
             return
         if text == "обнулить клуб":
+            await asyncio.sleep(1)
             await handle_clear_db(message)
             return
 
@@ -127,8 +129,9 @@ async def handle_vruchit(message: types.Message):
             await message.reply("Я не могу выдать минус.")
             return
         recipient = message.reply_to_message.from_user
+        recipient_name = recipient.username or recipient.full_name or "пользователю"
         await change_balance(recipient.id, amount, "без причины", author_id)
-        await message.reply(f"Я выдал {amount} нуаров @{recipient.username or recipient.full_name}")
+        await message.reply(f"Я выдал {amount} нуаров @{recipient.name}")
         return
 
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
