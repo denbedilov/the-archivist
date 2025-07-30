@@ -131,7 +131,7 @@ async def handle_vruchit(message: types.Message):
         recipient = message.reply_to_message.from_user
         recipient_name = recipient.username or recipient.full_name or "пользователю"
         await change_balance(recipient.id, amount, "без причины", author_id)
-        await message.reply(f"Я выдал {amount} нуаров @{recipient.name}")
+        await message.reply(f"Я выдал {amount} нуаров @{recipient_name}")
         return
 
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
