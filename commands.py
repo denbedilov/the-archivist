@@ -101,7 +101,7 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
 
     # Отнять по ответу на сообщение
     if message.reply_to_message:
-        pattern = r"отнять\s+(-?\d+)"
+        pattern = r"взыскать\s+(-?\d+)"
         m = re.match(pattern, text, re.IGNORECASE)
         if not m:
             await message.reply("Обращение не по этикету Клуба. Пример: 'отнять 3'")
