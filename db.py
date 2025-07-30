@@ -101,3 +101,12 @@ async def get_last_history(limit: int = 5):
             rows = await cursor.fetchall()
             return rows
 
+async def get_top_users(limit: int = 10):
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("""
+            SELECT user_id, balance FROM users
+            WHERE balance > 0
+            ORDER BY balance DESC
+            LIMIT ?
+        """, (limit,)) as cursor:
+            return await cursor.fetchall()

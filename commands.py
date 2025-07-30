@@ -87,7 +87,8 @@ async def handle_message(message: types.Message):
             parse_mode="HTML"
         )
         return
-
+    if text.startswith("рейтинг"):
+        await handle_rating(message)
     return
 
 async def handle_vruchit(message: types.Message):
@@ -201,3 +202,21 @@ async def find_member_by_username(message: types.Message, username: str):
         if admin.user.username and admin.user.username.lower() == username.lower():
             return admin
     return None
+
+async def handle_rating(message: types.Message):
+    rows = await get_top_users(limit=10)
+    if not rows:
+        await message.reply("Ни у кого в клубе нет нуаров.")
+        return
+
+    text = "🏆 Богатейшие члены клуба Le Cadeau Noir:\n\n"
+    for i, (user_id, balance) in enumerate(rows, start=1):
+        try:
+            user = await message.bot.get_chat(user_id)
+            name = user.first_name
+        except Exception:
+            name = "Участник"
+
+        text += f"{i}. <a href='tg://user?id={user_id}'>{name}</a> — {balance} нуаров\n"
+
+    await message.reply(text, parse_mode="HTML")
