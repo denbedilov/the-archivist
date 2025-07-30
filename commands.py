@@ -2,7 +2,8 @@ import re
 from aiogram import types
 from db import (
     get_balance, change_balance, set_role, get_role,
-    grant_key, revoke_key, has_key, get_last_history
+    grant_key, revoke_key, has_key, get_last_history,
+    get_top_users
 )
 
 KURATOR_ID = 164059195
@@ -49,6 +50,7 @@ async def handle_message(message: types.Message):
         bal = await get_balance(author_id)
         await message.reply(f"У Вас в кармане {bal} нуаров.")
         return
+
     if text == "моя роль":
         role_info = await get_role(author_id)
         if role_info:
@@ -71,9 +73,11 @@ async def handle_message(message: types.Message):
         else:
             await message.reply("Я не знаю кто это.")
         return
+
     if text == "список команд":
         await handle_list(message)
         return
+
     if text == "клуб":
         await message.answer(
             "🎩 <b>Клуб Le Cadeau Noir</b>\n"
@@ -88,9 +92,11 @@ async def handle_message(message: types.Message):
             parse_mode="HTML"
         )
         return
+
     if text.startswith("рейтинг"):
         await handle_rating(message)
         return
+
     return
 
 async def handle_vruchit(message: types.Message):
