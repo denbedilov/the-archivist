@@ -76,7 +76,6 @@ async def handle_message(message: types.Message):
 
     return
 
-
 async def handle_vruchit(message: types.Message):
     author_id = message.from_user.id
     text = message.text.strip()
@@ -98,61 +97,33 @@ async def handle_vruchit(message: types.Message):
         await message.reply(f"Я выдал {amount} нуаров @{recipient.username or recipient.full_name}")
         return
 
-    # Вручение по юзернейму
-    pattern = r"вручить\s+@(\w+)\s+(\d+)"
-    m = re.match(pattern, text, re.IGNORECASE)
-    if not m:
-        await message.reply("Обращение не по этикету Клуба. Пример: 'вручить @username 5'")
-        return
-    username, amount_str = m.groups()
-    amount = int(amount_str)
-    if amount <= 0:
-        await message.reply("Я не могу выдать минус.")
-        return
-    member = await find_member_by_username(message, username)
-    if not member:
-        await message.reply(f"Я не могу найти @{username}.")
-        return
-    await change_balance(member.user.id, amount, "без причины", author_id)
-    await message.reply(f"Я выдал @{username} {amount} нуаров")
-
-
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
 
     # Отнять по ответу на сообщение
     if message.reply_to_message:
-        pattern = r"взыскать\s+(\d+)"
+        pattern = r"отнять\s+(-?\d+)"
         m = re.match(pattern, text, re.IGNORECASE)
         if not m:
-            await message.reply("Обращение не по этикету Клуба. Пример: 'взыскать 3'")
+            await message.reply("Обращение не по этикету Клуба. Пример: 'отнять 3'")
             return
+
         amount = int(m.group(1))
         if amount <= 0:
-            await message.reply("Я не могу взыскать отрицательное количество.")
+            await message.reply("Я не могу отнять минус.")
             return
+
+        recipient_id = message.reply_to_message.from_user.id
+        recipient_name = message.reply_to_message.from_user.full_name
+
+        current_balance = await get_balance(recipient_id)
+        if amount > current_balance:
+            await message.reply(f"У {recipient_name} нет такого количества нуаров. Баланс: {current_balance}")
+            return
+
         recipient = message.reply_to_message.from_user
         await change_balance(recipient.id, -amount, "без причины", author_id)
         await message.reply(f"Я взыскал {amount} нуаров у @{recipient.username or recipient.full_name}")
         return
-
-    # Отнять по юзернейму
-    pattern = r"взыскать\s+@(\w+)\s+(\d+)"
-    m = re.match(pattern, text)
-    if not m:
-        await message.reply("Я не совсем понял.")
-        return
-    username, amount_str = m.groups()
-    amount = int(amount_str)
-    if amount <= 0:
-        await message.reply("Я не могу взыскать отрицательное количество.")
-        return
-    member = await find_member_by_username(message, username)
-    if not member:
-        await message.reply(f"Я не могу найти @{username}.")
-        return
-    await change_balance(member.user.id, -amount, "без причины", author_id)
-    await message.reply(f"Я взыскал у @{username} {amount} нуаров.")
-
 
 async def handle_naznachit(message: types.Message):
     author_id = message.from_user.id
@@ -173,7 +144,6 @@ async def handle_naznachit(message: types.Message):
     await set_role(user_id, role_name, role_desc)
     await message.reply(f"Назначена роль '{role_name}' пользователю @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
 
-
 async def handle_snyat_rol(message: types.Message):
     author_id = message.from_user.id
     if not message.reply_to_message:
@@ -182,7 +152,6 @@ async def handle_snyat_rol(message: types.Message):
     user_id = message.reply_to_message.from_user.id
     await set_role(user_id, None, None)
     await message.reply(f"Роль снята у @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
-
 
 async def handle_kluch(message: types.Message):
     author_id = message.from_user.id
@@ -193,7 +162,6 @@ async def handle_kluch(message: types.Message):
     await grant_key(user_id)
     await message.reply(f"Ключ от сейфа выдан @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
 
-
 async def handle_snyat_kluch(message: types.Message):
     author_id = message.from_user.id
     if not message.reply_to_message:
@@ -202,7 +170,6 @@ async def handle_snyat_kluch(message: types.Message):
     user_id = message.reply_to_message.from_user.id
     await revoke_key(user_id)
     await message.reply(f"Ключ от сейфа отнят у @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
-
 
 async def handle_moya_rol(message: types.Message):
     user_id = message.from_user.id
@@ -220,7 +187,6 @@ async def handle_list(message: types.Message):
     except Exception as e:
         print(f"Ошибка при чтении help.txt: {e}")
         await message.reply("Не удалось загрузить список команд.")
-
 
 async def find_member_by_username(message: types.Message, username: str):
     chat = message.chat
