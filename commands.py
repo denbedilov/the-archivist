@@ -83,11 +83,12 @@ async def handle_vruchit(message: types.Message):
 
     # Вручение по ответу на сообщение
     if message.reply_to_message:
-        pattern = r"вручить\s+(\d+)"
+        pattern = r"вручить\s+(-?\d+)"  # Разрешаем и отрицательные числа для проверки
         m = re.match(pattern, text, re.IGNORECASE)
         if not m:
             await message.reply("Обращение не по этикету Клуба. Пример: 'вручить 5'")
             return
+
         amount = int(m.group(1))
         if amount <= 0:
             await message.reply("Я не могу выдать минус.")
