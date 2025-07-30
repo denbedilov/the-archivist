@@ -177,7 +177,10 @@ async def handle_moya_rol(message: types.Message):
     if not role_info:
         await message.reply("У Вас пока нет роли.")
     else:
-        await message.reply(f"Ваша роль: {role_info['role']}\nОписание: {role_info['description']}")
+        role = role_info.get("role", "Без названия")
+        desc = role_info.get("description", "")
+        text_response = f"🎭 *{role}*\n\n_{desc}_"
+        await message.reply(text_response, parse_mode="Markdown")
 
 async def handle_list(message: types.Message):
     try:
