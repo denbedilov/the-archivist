@@ -8,10 +8,19 @@ async def init_db():
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
-                balance INTEGER DEFAULT 0,
-                role TEXT DEFAULT NULL,
-                role_description TEXT DEFAULT NULL,
-                has_key INTEGER DEFAULT 0
+                balance INTEGER DEFAULT 0
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS roles (
+                user_id INTEGER PRIMARY KEY,
+                role TEXT,
+                description TEXT
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS keys (
+                user_id INTEGER PRIMARY KEY
             )
         """)
         await db.execute("""
@@ -20,12 +29,11 @@ async def init_db():
                 user_id INTEGER,
                 amount INTEGER,
                 reason TEXT,
-                author_id INTEGER,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        # Куратор ID хранить можно либо отдельно, либо задавать в коде
         await db.commit()
+
 
 # --- Баланс ---
 async def get_balance(user_id: int) -> int:
