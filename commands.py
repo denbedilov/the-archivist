@@ -1,4 +1,5 @@
 import re
+import os
 from aiogram import types
 from db import (
     get_balance, change_balance, set_role, get_role,
@@ -7,6 +8,7 @@ from db import (
 )
 
 KURATOR_ID = 164059195
+DB_PATH = "/data/bot_data.sqlite"
 
 async def handle_message(message: types.Message):
     if not message.text:
@@ -99,6 +101,9 @@ async def handle_message(message: types.Message):
         if text == "снять ключ" and message.reply_to_message:
             await handle_snyat_kluch(message)
             return
+        if text == "Обнулить клуб":
+    await handle_clear_db(message)
+    return
 
     return
 
@@ -255,3 +260,19 @@ async def handle_club_members(message: types.Message):
 
     text = "🎭 <b>Члены клуба:</b>\n\n" + "\n".join(lines)
     await message.reply(text, parse_mode="HTML")
+
+
+async def handle_clear_db(message: types.Message):
+    author_id = message.from_user.id
+    if author_id != KURATOR_ID:
+        await message.reply("У вас нет прав для этой команды.")
+        return
+    
+    if os.path.exists(DB_PATH):
+        try:
+            os.remove(DB_PATH)
+            await message.reply("База данных успешно очищена! Бот перезапустится с чистой базой.")
+        except Exception as e:
+            await message.reply(f"Ошибка при удалении базы: {e}")
+    else:
+        await message.reply("Файл базы данных не найден — база уже чистая.")

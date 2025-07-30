@@ -2,21 +2,6 @@ import aiosqlite
 
 DB_PATH = "/data/bot_data.sqlite"
 
-async def migrate_add_has_key_column():
-    async with aiosqlite.connect(DB_PATH) as db:
-        # Проверяем наличие колонки has_key в таблице users
-        async with db.execute("PRAGMA table_info(users)") as cursor:
-            columns = await cursor.fetchall()
-            column_names = [col[1] for col in columns]  # 2-й элемент — имя колонки
-
-        if "has_key" not in column_names:
-            # Колонки нет — добавляем её с дефолтным значением 0
-            await db.execute("ALTER TABLE users ADD COLUMN has_key INTEGER DEFAULT 0")
-            await db.commit()
-            print("Миграция: добавлена колонка has_key в таблицу users")
-        else:
-            print("Миграция: колонка has_key уже существует — пропускаем")
-
 # --- Инициализация базы (вызывать при старте бота) ---
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
