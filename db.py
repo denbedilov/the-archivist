@@ -71,7 +71,7 @@ async def set_role(user_id: int, role: str, description: str):
 
 async def get_role(user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute("SELECT role, role_description FROM users WHERE user_id = ?", (user_id,)) as cursor:
+        async with db.execute("SELECT role, description FROM roles WHERE user_id = ?", (user_id,)) as cursor:
             row = await cursor.fetchone()
             if row and row[0]:
                 return {"role": row[0], "description": row[1]}
