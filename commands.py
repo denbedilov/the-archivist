@@ -32,7 +32,6 @@ async def handle_message(message: types.Message):
         if text == "члены клуба":
             await handle_club_members(message)
             return
-    return  
 
     # Только куратор — команды управления ролями и ключами
     if author_id == KURATOR_ID:
@@ -48,7 +47,6 @@ async def handle_message(message: types.Message):
         if text == "снять ключ" and message.reply_to_message:
             await handle_snyat_kluch(message)
             return
-    return
 
     # Команды, доступные всем
     if text == "мой карман":
