@@ -70,6 +70,7 @@ async def handle_message(message: types.Message):
             await message.reply(text_response, parse_mode="Markdown")
         else:
             await message.reply("Я не знаю кто это.")
+        return
     if text == "список команд":
         await handle_list(message)
         return
