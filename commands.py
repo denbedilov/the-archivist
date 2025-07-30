@@ -18,37 +18,7 @@ async def handle_message(message: types.Message):
     if author_id == (await message.bot.get_me()).id:
         return
 
-    # Проверяем, есть ли у автора ключ (полномочия)
-    user_has_key = (author_id == KURATOR_ID) or await has_key(author_id)
-
-    # Команды, доступные только куратору и обладателям ключа
-    if user_has_key:
-        if text.startswith("вручить "):
-            await handle_vruchit(message)
-            return
-        if text.startswith("взыскать "):
-            await handle_otnyat(message, text, author_id)
-            return
-        if text == "члены клуба":
-            await handle_club_members(message)
-            return
-
-    # Только куратор — команды управления ролями и ключами
-    if author_id == KURATOR_ID:
-        if text.startswith("назначить ") and message.reply_to_message:
-            await handle_naznachit(message)
-            return
-        if text == "снять роль" and message.reply_to_message:
-            await handle_snyat_rol(message)
-            return
-        if text == "ключ от сейфа" and message.reply_to_message:
-            await handle_kluch(message)
-            return
-        if text == "снять ключ" and message.reply_to_message:
-            await handle_snyat_kluch(message)
-            return
-
-    # Команды, доступные всем
+    # 🔓 Команды, доступные всем
     if text == "мой карман":
         bal = await get_balance(author_id)
         await message.reply(f"У Вас в кармане {bal} нуаров.")
@@ -100,7 +70,38 @@ async def handle_message(message: types.Message):
         await handle_rating(message)
         return
 
+    # 🔐 Проверяем ключ
+    user_has_key = (author_id == KURATOR_ID) or await has_key(author_id)
+
+    # 🔑 Команды с ключом
+    if user_has_key:
+        if text.startswith("вручить "):
+            await handle_vruchit(message)
+            return
+        if text.startswith("взыскать "):
+            await handle_otnyat(message, text, author_id)
+            return
+        if text == "члены клуба":
+            await handle_club_members(message)
+            return
+
+    # 👑 Команды только куратора
+    if author_id == KURATOR_ID:
+        if text.startswith("назначить ") and message.reply_to_message:
+            await handle_naznachit(message)
+            return
+        if text == "снять роль" and message.reply_to_message:
+            await handle_snyat_rol(message)
+            return
+        if text == "ключ от сейфа" and message.reply_to_message:
+            await handle_kluch(message)
+            return
+        if text == "снять ключ" and message.reply_to_message:
+            await handle_snyat_kluch(message)
+            return
+
     return
+
 
 async def handle_vruchit(message: types.Message):
     author_id = message.from_user.id
