@@ -2,7 +2,7 @@ import os
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from dotenv import load_dotenv
-from db import init_db
+from db import migrate_add_has_key_column, init_db
 from commands import handle_message
 
 load_dotenv()
@@ -22,6 +22,7 @@ async def on_message(message: types.Message):
         print(f"Ошибка в обработке сообщения: {e}")
 
 async def main():
+    await migrate_add_has_key_column()  # <-- Сначала миграция, добавляем колонку, если нужно
     await init_db()  # Инициализация базы при старте
     await dp.start_polling(bot)
 
