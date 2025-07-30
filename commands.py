@@ -52,9 +52,10 @@ async def handle_message(message: types.Message):
     if text == "моя роль":
         role_info = await get_role(author_id)
         if role_info:
-            role = role_info["role"]
-            description = role_info["description"]
-            await message.reply(f"Ваша роль: *{role}*\n_{description}_", parse_mode="Markdown")
+            role = role_info.get("role", "Без названия")
+            desc = role_info.get("description", "")
+            text_response = f"🎭 *{role}*\n\n_{desc}_"
+            await message.reply(text_response, parse_mode="Markdown")
         else:
             await message.reply("Я вас не узнаю.")
         return
@@ -62,7 +63,6 @@ async def handle_message(message: types.Message):
     if text == "роль" and message.reply_to_message:
         target_id = message.reply_to_message.from_user.id
         role_info = await get_role(target_id)
-
         if role_info:
             role = role_info.get("role", "Без названия")
             desc = role_info.get("description", "")
@@ -170,17 +170,6 @@ async def handle_snyat_kluch(message: types.Message):
     user_id = message.reply_to_message.from_user.id
     await revoke_key(user_id)
     await message.reply(f"Ключ от сейфа отнят у @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
-
-async def handle_moya_rol(message: types.Message):
-    user_id = message.from_user.id
-    role_info = await get_role(user_id)
-    if not role_info:
-        await message.reply("У Вас пока нет роли.")
-    else:
-        role = role_info.get("role", "Без названия")
-        desc = role_info.get("description", "")
-        text_response = f"🎭 *{role}*\n\n_{desc}_"
-        await message.reply(text_response, parse_mode="Markdown")
 
 async def handle_list(message: types.Message):
     try:
