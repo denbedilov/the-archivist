@@ -89,6 +89,7 @@ async def handle_message(message: types.Message):
         return
     if text.startswith("рейтинг"):
         await handle_rating(message)
+        return
     return
 
 async def handle_vruchit(message: types.Message):
