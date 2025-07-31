@@ -7,7 +7,9 @@ from aiogram import types
 from db import (
     get_balance, change_balance, set_role, get_role,
     grant_key, revoke_key, has_key, get_last_history,
-    get_top_users, get_all_roles
+    get_top_users, get_all_roles, reset_user_balance, 
+    reset_all_balances
+
 )
 
 KURATOR_ID = 164059195
@@ -299,25 +301,16 @@ async def handle_clear_db(message):
     except Exception as e:
         await message.reply(f"Ошибка при обнулении: {e}")
 
-async def handle_obnulit_balansy(message: types.Message):
-    conn = sqlite3.connect("club.db")
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET balance = 0")
-    cursor.execute("DELETE FROM history")  # Очистим историю вручений
-    conn.commit()
-    conn.close()
-    await message.reply("В клубе больше нет денег.")
-
+# Обнулить баланс конкретного участника
 async def handle_obnulit_balans(message: types.Message):
     if not message.reply_to_message:
-        await message.reply("Укажите участника ответом на его сообщение.")
+        await message.reply("Чтобы обнулить баланс, ответь на сообщение участника.")
         return
-
     user_id = message.reply_to_message.from_user.id
-    conn = sqlite3.connect("club.db")
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET balance = 0 WHERE user_id = ?", (user_id,))
-    cursor.execute("DELETE FROM history WHERE user_id = ?", (user_id,))
-    conn.commit()
-    conn.close()
-    await message.reply("Карман участника обнулен.")
+    await reset_user_balance(user_id)
+    await message.reply("Баланс участника обнулён.")
+
+# Обнулить балансы всех участников
+async def handle_obnulit_balansy(message: types.Message):
+    await reset_all_balances()
+    await message.reply("Все балансы обнулены.")

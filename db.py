@@ -55,6 +55,17 @@ async def change_balance(user_id: int, amount: int, reason: str, author_id: int)
             (user_id, amount, reason, author_id)
         )
         await db.commit()
+# Обнулить баланс конкретного участника
+async def reset_user_balance(user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE users SET balance = 0 WHERE user_id = ?", (user_id,))
+        await db.commit()
+
+# Обнулить балансы всех участников
+async def reset_all_balances():
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE users SET balance = 0")
+        await db.commit()
 
 # --- Роли ---
 async def set_role(user_id: int, role: str, description: str):
