@@ -108,6 +108,12 @@ async def handle_message(message: types.Message):
             await asyncio.sleep(1)
             await handle_clear_db(message)
             return
+        if text.startswith("обнулить балансы"):
+            await handle_obnulit_balansy(message)
+            return
+        if text.startswith("обнулить баланс"):
+            await handle_obnulit_balans(message)
+            return
 
     return
 
@@ -180,6 +186,7 @@ async def handle_naznachit(message: types.Message):
     user_id = message.reply_to_message.from_user.id
     await set_role(user_id, role_name, role_desc)
     await message.reply(f"Назначена роль '{role_name}' пользователю @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
+    return
 
 async def handle_snyat_rol(message: types.Message):
     author_id = message.from_user.id
@@ -189,6 +196,7 @@ async def handle_snyat_rol(message: types.Message):
     user_id = message.reply_to_message.from_user.id
     await set_role(user_id, None, None)
     await message.reply(f"Роль снята у @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
+    return
 
 async def handle_kluch(message: types.Message):
     author_id = message.from_user.id
@@ -198,6 +206,7 @@ async def handle_kluch(message: types.Message):
     user_id = message.reply_to_message.from_user.id
     await grant_key(user_id)
     await message.reply(f"Ключ от сейфа выдан @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
+    return
 
 async def handle_snyat_kluch(message: types.Message):
     author_id = message.from_user.id
@@ -285,6 +294,30 @@ async def handle_clear_db(message):
 
         # Перезапускаем процесс
         os.execv(sys.executable, [sys.executable] + sys.argv)
+        return
 
     except Exception as e:
         await message.reply(f"Ошибка при обнулении: {e}")
+
+async def handle_obnulit_balansy(message: types.Message):
+    conn = sqlite3.connect("club.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET balance = 0")
+    cursor.execute("DELETE FROM history")  # Очистим историю вручений
+    conn.commit()
+    conn.close()
+    await message.reply("В клубе больше нет денег.")
+
+async def handle_obnulit_balans(message: types.Message):
+    if not message.reply_to_message:
+        await message.reply("Укажите участника ответом на его сообщение.")
+        return
+
+    user_id = message.reply_to_message.from_user.id
+    conn = sqlite3.connect("club.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET balance = 0 WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM history WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    await message.reply("Карман участника обнулен.")
