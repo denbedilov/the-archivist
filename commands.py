@@ -26,7 +26,7 @@ async def handle_message(message: types.Message):
     # 🔓 Команды, доступные всем
     if text == "мой карман":
         bal = await get_balance(author_id)
-        await message.reply(f"У Вас в кармане {bal} нуаров.")
+        await message.reply(f"У Вас в кармане 🪙{bal} нуаров.")
         return
 
     if text == "моя роль":
