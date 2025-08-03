@@ -73,7 +73,7 @@ async def handle_message(message: types.Message):
         )
         return
 
-    if text.startswith("рейтинг"):
+    if text == "рейтинг клуба":
         await handle_rating(message)
         return
 
