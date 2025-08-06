@@ -266,7 +266,7 @@ async def handle_club_members(message: types.Message):
         try:
             user = await message.bot.get_chat_member(message.chat.id, user_id)
             if user.user.username:
-                mention = f"@{user.user.username}"
+                mention = f"{user.user.username}"
             else:
                 mention = f"<a href='tg://user?id={user_id}'>Участник</a>"
         except:
