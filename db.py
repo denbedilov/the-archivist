@@ -156,10 +156,8 @@ async def set_role_image(user_id, image_file_id):
     conn.commit()
     conn.close()
 
-async def get_role_with_image(user_id):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT role_name, role_description, image_file_id FROM roles WHERE user_id = ?", (user_id,))
-    role = c.fetchone()
-    conn.close()
-    return role
+async def get_role_with_image(user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("SELECT role, description, image_file_id FROM roles WHERE user_id = ?", (user_id,)) as cursor:
+            role = await cursor.fetchone()
+            return role  # tuple (role, description, image_file_id) или None
