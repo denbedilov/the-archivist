@@ -144,8 +144,6 @@ async def handle_message(message: types.Message):
         if text.startswith("обнулить баланс"):
             await handle_obnulit_balans(message)
             return
-        if (message.text and message.text.lower().startswith("фото роли")) or \
-           (message.caption and message.caption.lower().startswith("фото роли")):
 
         if message.text and message.text.lower().startswith("фото роли"):
             if not message.reply_to_message:

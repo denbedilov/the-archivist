@@ -109,10 +109,12 @@ async def get_role(user_id: int):
 async def set_role_image(user_id: int, image_file_id: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("""
-            UPDATE roles SET role_image = ? WHERE user_id = ?
-        """, (image_file_id, user_id))
+            INSERT INTO roles (user_id, role_name, role_desc, role_image)
+            VALUES (?, '', '', ?)
+            ON CONFLICT(user_id) DO UPDATE SET role_image = excluded.role_image
+        """, (user_id, image_file_id))
         await db.commit()
-
+        
 async def get_role_with_image(user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         async with db.execute("SELECT role_name, role_desc, role_image FROM roles WHERE user_id = ?", (user_id,)) as cursor:
