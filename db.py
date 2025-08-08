@@ -1,4 +1,5 @@
 import aiosqlite
+import sqlite3
 
 DB_PATH = "/data/bot_data.sqlite"
 
