@@ -38,7 +38,7 @@ async def handle_message(message: types.Message):
             role = role_info.get("role", "Без названия") if role_info else "Куратор"
             desc = role_info.get("description", "") if role_info else ""
             text_response = f"🎭 *{role}*\n\n_{desc}_"
-            photo = InputFile("images/kurator.jpg")  # здесь оборачиваем путь в InputFile
+            photo = InputFile(path="images/kurator.jpg")  # здесь оборачиваем путь в InputFile
             await message.reply_photo(
                 photo=photo,
                 caption=text_response,
