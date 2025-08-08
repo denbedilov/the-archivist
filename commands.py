@@ -156,7 +156,7 @@ async def handle_message(message: types.Message):
             photo_id = message.photo[-1].file_id
             target_user_id = message.reply_to_message.from_user.id
 
-            await db.set_role_image(target_user_id, photo_id)
+            await set_role_image(target_user_id, photo_id)
             await message.reply("Фото роли обновлено.")
 
             return
