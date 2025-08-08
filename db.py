@@ -32,18 +32,22 @@ async def init_db():
             )
         ''')
 
-        # Проверяем, есть ли столбец role_image в таблице roles
         async with db.execute("PRAGMA table_info(roles)") as cursor:
             columns = await cursor.fetchall()
             column_names = [col[1] for col in columns]
+
+        if "role_name" not in column_names:
+            await db.execute("ALTER TABLE roles ADD COLUMN role_name TEXT")
+        if "role_desc" not in column_names:
+            await db.execute("ALTER TABLE roles ADD COLUMN role_desc TEXT")
         if "role_image" not in column_names:
             await db.execute("ALTER TABLE roles ADD COLUMN role_image TEXT")
 
-        # Проверяем, есть ли столбец key в таблице users
+        # Проверяем и добавляем столбец key в таблицу users
         async with db.execute("PRAGMA table_info(users)") as cursor:
-            columns = await cursor.fetchall()
-            column_names = [col[1] for col in columns]
-        if "key" not in column_names:
+            columns_users = await cursor.fetchall()
+            column_names_users = [col[1] for col in columns_users]
+        if "key" not in column_names_users:
             await db.execute("ALTER TABLE users ADD COLUMN key INTEGER DEFAULT 0")
 
         await db.commit()
