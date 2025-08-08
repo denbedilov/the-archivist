@@ -4,7 +4,7 @@ import sys
 import aiosqlite
 import asyncio
 from aiogram import types
-from aiogram.types.input_file import InputFile
+from aiogram.types import FSInputFile
 from db import (
     get_balance, change_balance, set_role, get_role,
     grant_key, revoke_key, has_key, get_last_history,
@@ -38,7 +38,7 @@ async def handle_message(message: types.Message):
             role = role_info.get("role", "Без названия") if role_info else "Куратор"
             desc = role_info.get("description", "") if role_info else ""
             text_response = f"🎭 *{role}*\n\n_{desc}_"
-            photo = InputFile(path="images/kurator.jpg")  # здесь оборачиваем путь в InputFile
+            photo = FSInputFile("images/kurator.jpg")  # здесь оборачиваем путь в InputFile
             await message.reply_photo(
                 photo=photo,
                 caption=text_response,
