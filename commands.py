@@ -33,12 +33,13 @@ async def handle_message(message: types.Message):
 
     if text == "моя роль":
         role_info = await get_role(author_id)
-        if message.from_user.id == KURATOR_ID:  # проверяем твой ID
+        if message.from_user.id == KURATOR_ID:
             role = role_info.get("role", "Без названия") if role_info else "Куратор"
             desc = role_info.get("description", "") if role_info else ""
             text_response = f"🎭 *{role}*\n\n_{desc}_"
+            photo = InputFile("images/kurator.jpg")  # здесь оборачиваем путь в InputFile
             await message.reply_photo(
-                photo=open("images/kurator.jpg", "rb"),  # ссылка на твою картинку
+                photo=photo,
                 caption=text_response,
                 parse_mode="Markdown"
             )
