@@ -146,19 +146,20 @@ async def handle_message(message: types.Message):
             return
         if message.text.lower().startswith("фото роли"):
             if not message.reply_to_message:
-                await message.reply("Нужно ответить на сообщение участника с его ролью.")
+                await message.reply("Нужно ответить на сообщение участника, которому меняешь фото роли.")
                 return
 
-            if not message.photo:
-                await message.reply("Пришлите фото вместе с командой.")
+            # Пытаемся взять фото из этого сообщения
+            photo_source = message.photo or message.reply_to_message.photo
+            if not photo_source:
+                await message.reply("Не найдено фото. Пришлите фото вместе с командой или ответьте на фото.")
                 return
 
-            photo_id = message.photo[-1].file_id
+            photo_id = photo_source[-1].file_id
             target_user_id = message.reply_to_message.from_user.id
 
             await set_role_image(target_user_id, photo_id)
             await message.reply("Фото роли обновлено.")
-
             return
 
 
