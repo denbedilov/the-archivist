@@ -144,29 +144,16 @@ async def handle_message(message: types.Message):
         if text.startswith("обнулить баланс"):
             await handle_obnulit_balans(message)
             return
-        if message.text and message.text.lower().startswith("фото роли"):
-            # По месту вызова — если ты делал проверку прав выше, можно убрать проверку здесь.
-            # Иначе — оставим проверку: только куратор может назначать фото (если нужно, убери эту проверку).
-            if message.from_user.id != KURATOR_ID:
-                await message.reply("Только куратор может назначать фото роли.")
-                return
-
+        if text == "фото роли":
             if not message.reply_to_message:
-                await message.reply("Нужно ответить на сообщение участника, которому назначаете фото роли.")
+                await message.reply("Нужно ответить на сообщение участника с его ролью.")
                 return
 
-            # Ищем фото: сначала в самом сообщении с командой, если нет — в сообщении, на которое ответили
-            photo_source = None
-            if message.photo:
-                photo_source = message
-            elif message.reply_to_message.photo:
-                photo_source = message.reply_to_message
-
-            if not photo_source:
-                await message.reply("Не найдено фото. Прикрепите фото к сообщению с командой или ответьте на сообщение с фото.")
+            if not message.photo:
+                await message.reply("Пришлите фото вместе с командой.")
                 return
 
-            photo_id = photo_source.photo[-1].file_id
+            photo_id = message.photo[-1].file_id
             target_user_id = message.reply_to_message.from_user.id
 
             await set_role_image(target_user_id, photo_id)
