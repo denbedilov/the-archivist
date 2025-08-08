@@ -353,3 +353,4 @@ async def handle_obnulit_balans(message: types.Message):
 async def handle_obnulit_balansy(message: types.Message):
     await reset_all_balances()
     await message.reply("Все балансы обнулены.")
+

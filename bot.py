@@ -21,9 +21,12 @@ async def on_message(message: types.Message):
     except Exception as e:
         print(f"Ошибка в обработке сообщения: {e}")
 
-@dp.message_handler(content_types=types.ContentType.PHOTO)
+@dp.message(content_types=types.ContentType.PHOTO)
 async def on_photo_message(message: types.Message):
-    await handle_photo_command(message)
+    try:
+        await handle_photo_command(message)
+    except Exception as e:
+        print(f"Ошибка в обработке фото команды: {e}")
 
 async def main():
     await init_db()  # Инициализация базы при старте
