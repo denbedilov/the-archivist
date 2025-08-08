@@ -32,36 +32,52 @@ async def handle_message(message: types.Message):
         await message.reply(f"У Вас в кармане 🪙{bal} нуаров.")
         return
 
+    # ===== МОЯ РОЛЬ =====
     if text == "моя роль":
-        role_info = await get_role(author_id)
-        if message.from_user.id == KURATOR_ID:
-            role = role_info.get("role", "Без названия") if role_info else "Куратор"
-            desc = role_info.get("description", "") if role_info else ""
-            text_response = f"🎭 *{role}*\n\n_{desc}_"
-            photo = FSInputFile("images/kurator.jpg")  # здесь оборачиваем путь в InputFile
-            await message.reply_photo(
-                photo=photo,
-                caption=text_response,
-                parse_mode="Markdown"
-            )
-        else:
-            if role_info:
-                role = role_info.get("role", "Без названия")
-                desc = role_info.get("description", "")
-                text_response = f"🎭 *{role}*\n\n_{desc}_"
-                await message.reply(text_response, parse_mode="Markdown")
+        # Попробуем получить расширенные данные (role + image). Если функция еще не добавлена в db.py — fallback на старую get_role.
+        try:
+            role_row = await get_role_with_image(author_id)  # ожидается (role_name, role_description, image_file_id) или None
+        except NameError:
+            role_info = await get_role(author_id)
+            role_row = (role_info.get("role"), role_info.get("description"), None) if role_info else None
+
+        if role_row:
+            role_name, role_desc, image_file_id = role_row
+            text_response = f"🎭 *{role_name}*\n\n_{role_desc}_"
+            if image_file_id:
+                # file_id из Telegram — можно отправлять напрямую
+                await message.reply_photo(photo=image_file_id, caption=text_response, parse_mode="Markdown")
             else:
-                await message.reply("Я вас не узнаю.")
+                # для куратора — попытка отправить локальную картинку как fallback
+                if author_id == KURATOR_ID and os.path.exists("images/kurator.jpg"):
+                    try:
+                        await message.reply_photo(photo=FSInputFile("images/kurator.jpg"), caption=text_response, parse_mode="Markdown")
+                    except Exception:
+                        # если что-то пошло не так с файлом — просто текст
+                        await message.reply(text_response, parse_mode="Markdown")
+                else:
+                    await message.reply(text_response, parse_mode="Markdown")
+        else:
+            await message.reply("Я вас не узнаю.")
         return
 
+    # ===== РОЛЬ (в ответ на сообщение) =====
     if text == "роль" and message.reply_to_message:
         target_id = message.reply_to_message.from_user.id
-        role_info = await get_role(target_id)
-        if role_info:
-            role = role_info.get("role", "Без названия")
-            desc = role_info.get("description", "")
-            text_response = f"🎭 *{role}*\n\n_{desc}_"
-            await message.reply(text_response, parse_mode="Markdown")
+
+        try:
+            role_row = await get_role_with_image(target_id)
+        except NameError:
+            role_info = await get_role(target_id)
+            role_row = (role_info.get("role"), role_info.get("description"), None) if role_info else None
+
+        if role_row:
+            role_name, role_desc, image_file_id = role_row
+            text_response = f"🎭 *{role_name}*\n\n_{role_desc}_"
+            if image_file_id:
+                await message.reply_photo(photo=image_file_id, caption=text_response, parse_mode="Markdown")
+            else:
+                await message.reply(text_response, parse_mode="Markdown")
         else:
             await message.reply("Я не знаю кто это.")
         return
@@ -128,8 +144,22 @@ async def handle_message(message: types.Message):
         if text.startswith("обнулить баланс"):
             await handle_obnulit_balans(message)
             return
+        if message.text.lower().startswith("фото роли"):
+            if not message.reply_to_message:
+                await message.reply("Нужно ответить на сообщение участника с его ролью.")
+                return
 
-    return
+            if not message.photo:
+                await message.reply("Пришлите фото вместе с командой.")
+                return
+
+            photo_id = message.photo[-1].file_id
+            target_user_id = message.reply_to_message.from_user.id
+
+            db.set_role_image(target_user_id, photo_id)
+            await message.reply("Фото роли обновлено.")
+
+            return
 
 
 async def handle_vruchit(message: types.Message):

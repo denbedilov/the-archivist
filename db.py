@@ -3,33 +3,46 @@ import aiosqlite
 DB_PATH = "/data/bot_data.sqlite"
 
 # --- Инициализация базы (вызывать при старте бота) ---
-async def init_db():
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY,
-                balance INTEGER DEFAULT 0,
-                has_key INTEGER DEFAULT 0
-            )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS roles (
-                user_id INTEGER PRIMARY KEY,
-                role TEXT,
-                description TEXT
-            )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                amount INTEGER,
-                reason TEXT,
-                author_id INTEGER,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        await db.commit()
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Создаем таблицы, если их нет
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT,
+            balance INTEGER DEFAULT 0,
+            role TEXT,
+            key INTEGER DEFAULT 0
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS roles (
+            user_id INTEGER PRIMARY KEY,
+            role_name TEXT,
+            role_desc TEXT
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            action TEXT,
+            amount INTEGER,
+            reason TEXT,
+            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Добавляем новый столбец для фото роли, если он отсутствует
+    try:
+        cursor.execute("ALTER TABLE roles ADD COLUMN role_image TEXT")
+    except sqlite3.OperationalError:
+        pass  # столбец уже есть
+
+    conn.commit()
+    conn.close()
 
 
 # --- Баланс ---
@@ -134,3 +147,18 @@ async def get_all_roles():
             WHERE role IS NOT NULL AND TRIM(role) != ''
         """) as cursor:
             return await cursor.fetchall()
+
+async def set_role_image(user_id, image_file_id):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE roles SET image_file_id = ? WHERE user_id = ?", (image_file_id, user_id))
+    conn.commit()
+    conn.close()
+
+async def get_role_with_image(user_id):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT role_name, role_description, image_file_id FROM roles WHERE user_id = ?", (user_id,))
+    role = c.fetchone()
+    conn.close()
+    return role
