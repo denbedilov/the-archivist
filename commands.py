@@ -144,13 +144,15 @@ async def handle_message(message: types.Message):
         if text.startswith("обнулить баланс"):
             await handle_obnulit_balans(message)
             return
-        if text == "фото роли":
+        text = (message.text or message.caption or "").lower()
+
+        if text.startswith("фото роли"):
             if not message.reply_to_message:
                 await message.reply("Нужно ответить на сообщение участника с его ролью.")
                 return
 
             if not message.photo:
-                await message.reply("Пришлите фото вместе с командой.")
+                await message.reply("Пришлите фото вместе с командой (как подпись к фото).")
                 return
 
             photo_id = message.photo[-1].file_id
