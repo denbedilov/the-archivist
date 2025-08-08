@@ -23,7 +23,7 @@ async def on_message(message: types.Message):
 
 @dp.message_handler(content_types=types.ContentType.PHOTO)
 async def on_photo_message(message: types.Message):
-    await handle_photo_role_command(message)
+    await handle_photo_command(message)
 
 async def main():
     await init_db()  # Инициализация базы при старте
