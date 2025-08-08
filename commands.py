@@ -33,13 +33,23 @@ async def handle_message(message: types.Message):
 
     if text == "моя роль":
         role_info = await get_role(author_id)
-        if role_info:
-            role = role_info.get("role", "Без названия")
-            desc = role_info.get("description", "")
+        if message.from_user.id == KURATOR_ID:  # проверяем твой ID
+            role = role_info.get("role", "Без названия") if role_info else "Куратор"
+            desc = role_info.get("description", "") if role_info else ""
             text_response = f"🎭 *{role}*\n\n_{desc}_"
-            await message.reply(text_response, parse_mode="Markdown")
+            await message.reply_photo(
+                photo=open("images/kurator.jpg", "rb"),  # ссылка на твою картинку
+                caption=text_response,
+                parse_mode="Markdown"
+            )
         else:
-            await message.reply("Я вас не узнаю.")
+            if role_info:
+                role = role_info.get("role", "Без названия")
+                desc = role_info.get("description", "")
+                text_response = f"🎭 *{role}*\n\n_{desc}_"
+                await message.reply(text_response, parse_mode="Markdown")
+            else:
+                await message.reply("Я вас не узнаю.")
         return
 
     if text == "роль" and message.reply_to_message:
