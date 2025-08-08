@@ -9,15 +9,14 @@ async def init_db():
                 user_id INTEGER PRIMARY KEY,
                 username TEXT,
                 balance INTEGER DEFAULT 0,
-                role TEXT,
-                key INTEGER DEFAULT 0
+                role TEXT
             )
         ''')
 
         # Проверяем, есть ли столбец key в таблице users
         async with db.execute("PRAGMA table_info(users)") as cursor:
             columns = await cursor.fetchall()
-        column_names = [col[1] for col in columns]
+            column_names = [col[1] for col in columns]
         if "key" not in column_names:
             await db.execute("ALTER TABLE users ADD COLUMN key INTEGER DEFAULT 0")
 
@@ -32,7 +31,7 @@ async def init_db():
         # Проверяем, есть ли столбец role_image в таблице roles
         async with db.execute("PRAGMA table_info(roles)") as cursor:
             columns = await cursor.fetchall()
-        column_names = [col[1] for col in columns]
+            column_names = [col[1] for col in columns]
         if "role_image" not in column_names:
             await db.execute("ALTER TABLE roles ADD COLUMN role_image TEXT")
 
@@ -48,6 +47,7 @@ async def init_db():
         ''')
 
         await db.commit()
+
 
 # --- Баланс ---
 async def get_balance(user_id: int) -> int:
