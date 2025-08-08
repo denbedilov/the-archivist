@@ -1,50 +1,47 @@
 import aiosqlite
-import sqlite3
 
 DB_PATH = "/data/bot_data.sqlite"
 
 # --- Инициализация базы (вызывать при старте бота) ---
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+async def init_db():
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY,
+                username TEXT,
+                balance INTEGER DEFAULT 0,
+                has_key INTEGER DEFAULT 0
+            )
+        ''')
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS roles (
+                user_id INTEGER PRIMARY KEY,
+                role TEXT,
+                description TEXT,
+                image_file_id TEXT DEFAULT NULL
+            )
+        ''')
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                action TEXT,
+                amount INTEGER,
+                reason TEXT,
+                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        await db.commit()
 
-    # Создаем таблицы, если их нет
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            username TEXT,
-            balance INTEGER DEFAULT 0,
-            role TEXT,
-            key INTEGER DEFAULT 0
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS roles (
-            user_id INTEGER PRIMARY KEY,
-            role_name TEXT,
-            role_desc TEXT
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            action TEXT,
-            amount INTEGER,
-            reason TEXT,
-            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-
-    # Добавляем новый столбец для фото роли, если он отсутствует
-    try:
-        cursor.execute("ALTER TABLE roles ADD COLUMN role_image TEXT")
-    except sqlite3.OperationalError:
-        pass  # столбец уже есть
-
-    conn.commit()
-    conn.close()
-
+# --- Проверка и добавление колонки image_file_id, если нет ---
+async def add_role_image_column_if_not_exists():
+    async with aiosqlite.connect(DB_PATH) as db:
+        try:
+            await db.execute("ALTER TABLE roles ADD COLUMN image_file_id TEXT DEFAULT NULL")
+            await db.commit()
+        except aiosqlite.OperationalError:
+            # Колонка уже существует, ничего делать не надо
+            pass
 
 # --- Баланс ---
 async def get_balance(user_id: int) -> int:
@@ -55,7 +52,6 @@ async def get_balance(user_id: int) -> int:
 
 async def change_balance(user_id: int, amount: int, reason: str, author_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
-        # Проверяем есть ли пользователь
         async with db.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,)) as cursor:
             row = await cursor.fetchone()
         if row:
@@ -69,13 +65,12 @@ async def change_balance(user_id: int, amount: int, reason: str, author_id: int)
             (user_id, amount, reason, author_id)
         )
         await db.commit()
-# Обнулить баланс конкретного участника
+
 async def reset_user_balance(user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("UPDATE users SET balance = 0 WHERE user_id = ?", (user_id,))
         await db.commit()
 
-# Обнулить балансы всех участников
 async def reset_all_balances():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("UPDATE users SET balance = 0")
@@ -84,7 +79,6 @@ async def reset_all_balances():
 # --- Роли ---
 async def set_role(user_id: int, role: str, description: str):
     async with aiosqlite.connect(DB_PATH) as db:
-        # Вставляем или обновляем
         await db.execute("""
             INSERT INTO roles (user_id, role, description) VALUES (?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET role = excluded.role, description = excluded.description
@@ -100,10 +94,22 @@ async def get_role(user_id: int):
             else:
                 return None
 
+async def set_role_image(user_id: int, image_file_id: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("""
+            INSERT INTO roles (user_id, image_file_id) VALUES (?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET image_file_id = excluded.image_file_id
+        """, (user_id, image_file_id))
+        await db.commit()
+
+async def get_role_with_image(user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("SELECT role, description, image_file_id FROM roles WHERE user_id = ?", (user_id,)) as cursor:
+            return await cursor.fetchone()  # (role, description, image_file_id) или None
+
 # --- Полномочия (ключи от сейфа) ---
 async def grant_key(user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
-        # Добавляем или обновляем ключ
         await db.execute("""
             INSERT INTO users (user_id, has_key) VALUES (?, 1)
             ON CONFLICT(user_id) DO UPDATE SET has_key = 1
@@ -121,11 +127,11 @@ async def has_key(user_id: int) -> bool:
             row = await cursor.fetchone()
             return bool(row and row[0] == 1)
 
-# --- История последних изменений баланса ---
+# --- История ---
 async def get_last_history(limit: int = 5):
     async with aiosqlite.connect(DB_PATH) as db:
         async with db.execute("""
-            SELECT user_id, amount, reason, author_id, timestamp 
+            SELECT user_id, amount, reason, author_id, date 
             FROM history ORDER BY id DESC LIMIT ?
         """, (limit,)) as cursor:
             rows = await cursor.fetchall()
@@ -148,16 +154,3 @@ async def get_all_roles():
             WHERE role IS NOT NULL AND TRIM(role) != ''
         """) as cursor:
             return await cursor.fetchall()
-
-async def set_role_image(user_id, image_file_id):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("UPDATE roles SET image_file_id = ? WHERE user_id = ?", (image_file_id, user_id))
-    conn.commit()
-    conn.close()
-
-async def get_role_with_image(user_id: int):
-    async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute("SELECT role, description, image_file_id FROM roles WHERE user_id = ?", (user_id,)) as cursor:
-            role = await cursor.fetchone()
-            return role  # tuple (role, description, image_file_id) или None

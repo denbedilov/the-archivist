@@ -9,7 +9,7 @@ from db import (
     get_balance, change_balance, set_role, get_role,
     grant_key, revoke_key, has_key, get_last_history,
     get_top_users, get_all_roles, reset_user_balance, 
-    reset_all_balances
+    reset_all_balances, set_role_image, get_role_with_image
 
 )
 
@@ -156,7 +156,7 @@ async def handle_message(message: types.Message):
             photo_id = message.photo[-1].file_id
             target_user_id = message.reply_to_message.from_user.id
 
-            db.set_role_image(target_user_id, photo_id)
+            await db.set_role_image(target_user_id, photo_id)
             await message.reply("Фото роли обновлено.")
 
             return
