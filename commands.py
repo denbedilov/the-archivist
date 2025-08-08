@@ -144,20 +144,29 @@ async def handle_message(message: types.Message):
         if text.startswith("обнулить баланс"):
             await handle_obnulit_balans(message)
             return
-        if message.text and message.text.lower().startswith("фото роли"):
+        if (message.text and message.text.lower().startswith("фото роли")) or \
+           (message.caption and message.caption.lower().startswith("фото роли")):
+
             if not message.reply_to_message:
-                await message.reply("Нужно ответить на сообщение участника, чтобы назначить ему фото роли.")
+                await message.reply("Нужно ответить на сообщение участника, чтобы назначить фото роли.")
                 return
 
             if not message.photo:
-                await message.reply("Пожалуйста, пришлите фото вместе с командой.")
+                await message.reply("Пришлите фото вместе с командой.")
                 return
 
             target_user_id = message.reply_to_message.from_user.id
             photo_id = message.photo[-1].file_id
 
-            await set_role_image(target_user_id, photo_id)
-            await message.reply("Фото роли успешно обновлено.")
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute("""
+                    INSERT INTO roles (user_id, role_name, role_desc, role_image) 
+                    VALUES (?, '', '', ?)
+                    ON CONFLICT(user_id) DO UPDATE SET role_image = excluded.role_image
+                """, (target_user_id, photo_id))
+                await db.commit()
+
+            await message.reply("Фото роли обновлено.")
             return
 
 
