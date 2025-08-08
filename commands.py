@@ -4,7 +4,7 @@ import sys
 import aiosqlite
 import asyncio
 from aiogram import types
-from aiogram.types import InputFile
+from aiogram.types.input_file import InputFile
 from db import (
     get_balance, change_balance, set_role, get_role,
     grant_key, revoke_key, has_key, get_last_history,
