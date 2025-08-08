@@ -23,7 +23,6 @@ async def on_message(message: types.Message):
 
 async def main():
     await init_db()  # Инициализация базы при старте
-    await add_role_image_column_if_not_exists()  # Добавляем столбец, если его нет
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
