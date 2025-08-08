@@ -3,7 +3,7 @@ import asyncio
 from aiogram import Bot, Dispatcher, types
 from dotenv import load_dotenv
 from db import init_db
-from commands import handle_message
+from commands import handle_message, handle_photo_command 
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
@@ -20,6 +20,10 @@ async def on_message(message: types.Message):
         await handle_message(message)
     except Exception as e:
         print(f"Ошибка в обработке сообщения: {e}")
+
+@dp.message_handler(content_types=types.ContentType.PHOTO)
+async def on_photo_message(message: types.Message):
+    await handle_photo_role_command(message)
 
 async def main():
     await init_db()  # Инициализация базы при старте

@@ -145,21 +145,18 @@ async def handle_message(message: types.Message):
             await handle_obnulit_balans(message)
             return
 
-        if message.caption and message.caption.lower().startswith("фото роли"):
-            if not message.reply_to_message:
-                await message.reply("Нужно ответить на сообщение участника, чтобы назначить фото роли.")
-                return
-
-            if not message.photo:
-                await message.reply("Пришлите фото вместе с командой в ответ на сообщение участника.")
-                return
-
-            target_user_id = message.reply_to_message.from_user.id
-            photo_id = message.photo[-1].file_id
-
-            await set_role_image(target_user_id, photo_id)
-            await message.reply("Фото роли обновлено.")
+async def handle_photo_command(message: types.Message):
+    if message.caption and message.caption.lower().startswith("фото роли"):
+        if not message.reply_to_message:
+            await message.reply("Нужно ответить на сообщение участника, чтобы назначить фото роли.")
             return
+
+        target_user_id = message.reply_to_message.from_user.id
+        photo_id = message.photo[-1].file_id
+
+        await set_role_image(target_user_id, photo_id)
+        await message.reply("Фото роли обновлено.")
+
 
 
 async def handle_vruchit(message: types.Message):
