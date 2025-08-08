@@ -4,22 +4,16 @@ DB_PATH = "/data/bot_data.sqlite"
 
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
+        # Создаем таблицы, если их нет
         await db.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
                 username TEXT,
                 balance INTEGER DEFAULT 0,
-                role TEXT
+                role TEXT,
+                key INTEGER DEFAULT 0
             )
         ''')
-
-        # Проверяем, есть ли столбец key в таблице users
-        async with db.execute("PRAGMA table_info(users)") as cursor:
-            columns = await cursor.fetchall()
-            column_names = [col[1] for col in columns]
-        if "key" not in column_names:
-            await db.execute("ALTER TABLE users ADD COLUMN key INTEGER DEFAULT 0")
-
         await db.execute('''
             CREATE TABLE IF NOT EXISTS roles (
                 user_id INTEGER PRIMARY KEY,
@@ -27,14 +21,6 @@ async def init_db():
                 role_desc TEXT
             )
         ''')
-
-        # Проверяем, есть ли столбец role_image в таблице roles
-        async with db.execute("PRAGMA table_info(roles)") as cursor:
-            columns = await cursor.fetchall()
-            column_names = [col[1] for col in columns]
-        if "role_image" not in column_names:
-            await db.execute("ALTER TABLE roles ADD COLUMN role_image TEXT")
-
         await db.execute('''
             CREATE TABLE IF NOT EXISTS history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,6 +31,20 @@ async def init_db():
                 date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+
+        # Проверяем, есть ли столбец role_image в таблице roles
+        async with db.execute("PRAGMA table_info(roles)") as cursor:
+            columns = await cursor.fetchall()
+            column_names = [col[1] for col in columns]
+        if "role_image" not in column_names:
+            await db.execute("ALTER TABLE roles ADD COLUMN role_image TEXT")
+
+        # Проверяем, есть ли столбец key в таблице users
+        async with db.execute("PRAGMA table_info(users)") as cursor:
+            columns = await cursor.fetchall()
+            column_names = [col[1] for col in columns]
+        if "key" not in column_names:
+            await db.execute("ALTER TABLE users ADD COLUMN key INTEGER DEFAULT 0")
 
         await db.commit()
 
