@@ -283,17 +283,17 @@ async def handle_club_members(message: types.Message):
 
     lines = ["🎭 <b>Члены клуба:</b>\n"]
     for user_id, role in rows:
-        # пробуем получить имя/username из чата
-        mention = mention_html(user_id, "Участник")
+        # как в рейтинге: пытаемся взять полное имя из текущего чата
+        name = "Участник"
         try:
             member = await message.bot.get_chat_member(message.chat.id, user_id)
-            if member.user.username:
-                mention = f"@{member.user.username}"
-            else:
-                mention = mention_html(user_id, member.user.full_name or "Участник")
+            name = member.user.full_name or name
         except Exception:
             pass
+
+        mention = mention_html(user_id, name)  # кликабельное имя, не @username
         lines.append(f"{mention} — <b>{role}</b>")
+
     await message.reply("\n".join(lines), parse_mode="HTML")
 
 async def handle_clear_db(message: types.Message):
