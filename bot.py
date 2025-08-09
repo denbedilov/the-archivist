@@ -13,15 +13,20 @@ if not TOKEN:
 
 logging.basicConfig(level=logging.INFO)
 
-# ЯВНАЯ проверка версии aiogram — без try/except
 import aiogram
 AIOMAJOR = int(aiogram.__version__.split(".")[0])
 
 if AIOMAJOR >= 3:
-    # -------- aiogram v3 --------
-    from aiogram import Bot, Dispatcher, F
+    # -------- aiogram v3 (разные раскладки импорта) --------
+    try:
+        # Современная раскладка (Router на верхнем уровне)
+        from aiogram import Bot, Dispatcher, F, Router
+    except Exception:
+        # Альтернативная раскладка (старые пре-релизы)
+        from aiogram import Bot, Dispatcher, F
+        from aiogram.router import Router
+
     from aiogram.types import Message
-    from aiogram.router import Router
 
     bot = Bot(token=TOKEN)
     dp = Dispatcher()
