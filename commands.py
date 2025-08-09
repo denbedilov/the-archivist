@@ -146,6 +146,10 @@ async def handle_message(message: types.Message):
             return
 
 async def handle_photo_command(message: types.Message):
+    author_id = message.from_user.id
+    if author_id != KURATOR_ID:
+        return
+        
     text = message.caption.lower().strip()
     author_id = message.from_user.id
 
