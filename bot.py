@@ -3,7 +3,6 @@ import asyncio
 import logging
 from dotenv import load_dotenv
 
-# общая логика
 from commands import handle_message, handle_photo_command
 from db import init_db
 
@@ -14,14 +13,17 @@ if not TOKEN:
 
 logging.basicConfig(level=logging.INFO)
 
-# --- попытка запустить на aiogram v3 ---
-try:
-    import aiogram
+# ЯВНАЯ проверка версии aiogram — без try/except
+import aiogram
+AIOMAJOR = int(aiogram.__version__.split(".")[0])
+
+if AIOMAJOR >= 3:
+    # -------- aiogram v3 --------
     from aiogram import Bot, Dispatcher, F
     from aiogram.types import Message
     from aiogram.router import Router
 
-    bot = Bot(token=TOKEN)  # parse_mode можно добавить при желании
+    bot = Bot(token=TOKEN)
     dp = Dispatcher()
     router = Router()
 
@@ -46,10 +48,8 @@ try:
             asyncio.set_event_loop(loop)
             loop.run_until_complete(main())
 
-# --- если это aiogram v2, используем совместимый путь ---
-except ModuleNotFoundError:
-    # v2: нет aiogram.router, подключаем другой API
-    import aiogram  # noqa: F401
+else:
+    # -------- aiogram v2 --------
     from aiogram import Bot, Dispatcher, types
     from aiogram.utils import executor
 
@@ -58,7 +58,6 @@ except ModuleNotFoundError:
 
     @dp.message_handler(content_types=types.ContentTypes.ANY)
     async def fallback_handler(message: types.Message):
-        # Поведение как в твоём раннем варианте:
         if message.photo and message.caption:
             await handle_photo_command(message)
         elif message.text:
