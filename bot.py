@@ -16,17 +16,11 @@ dp = Dispatcher()
 
 @dp.message()
 async def on_message(message: types.Message):
-    try:
-        await handle_message(message)
-    except Exception as e:
-        print(f"Ошибка в обработке сообщения: {e}")
-
-@dp.message(content_types=types.ContentType.PHOTO)
-async def on_photo_message(message: types.Message):
-    try:
+    # Проверяем, есть ли фото и текст в сообщении
+    if message.photo and message.caption:
         await handle_photo_command(message)
-    except Exception as e:
-        print(f"Ошибка в обработке фото команды: {e}")
+    else:
+        await handle_message(message)
 
 async def main():
     await init_db()  # Инициализация базы при старте

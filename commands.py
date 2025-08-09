@@ -146,17 +146,22 @@ async def handle_message(message: types.Message):
             return
 
 async def handle_photo_command(message: types.Message):
-    if message.caption and message.caption.lower().startswith("фото роли"):
-        if not message.reply_to_message:
-            await message.reply("Нужно ответить на сообщение участника, чтобы назначить фото роли.")
-            return
+    text = message.caption.lower().strip()
+    author_id = message.from_user.id
 
+    # Проверяем, что команда "фото роли" и что есть ответ на сообщение
+    if text.startswith("фото роли") and message.reply_to_message:
         target_user_id = message.reply_to_message.from_user.id
-        photo_id = message.photo[-1].file_id
+        photo_id = message.photo[-1].file_id  # берем самое большое фото
 
+        # Сохраняем file_id в базу
         await set_role_image(target_user_id, photo_id)
-        await message.reply("Фото роли обновлено.")
 
+        # Ответ с подтверждением (без конкретного текста — можно потом добавить)
+        await message.reply("Фото роли обновлено.")
+    else:
+        # Если не команда, передать дальше или игнорировать
+        pass
 
 
 async def handle_vruchit(message: types.Message):
@@ -353,4 +358,3 @@ async def handle_obnulit_balans(message: types.Message):
 async def handle_obnulit_balansy(message: types.Message):
     await reset_all_balances()
     await message.reply("Все балансы обнулены.")
-
