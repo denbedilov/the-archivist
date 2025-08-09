@@ -1,43 +1,44 @@
 import re
 import os
 import sys
-import aiosqlite
 import asyncio
 from aiogram import types
 from aiogram.types import FSInputFile
+
 from db import (
     get_balance, change_balance, set_role, get_role,
     grant_key, revoke_key, has_key, get_last_history,
-    get_top_users, get_all_roles, reset_user_balance, 
+    get_top_users, get_all_roles, reset_user_balance,
     reset_all_balances, set_role_image, get_role_with_image
-
 )
 
 KURATOR_ID = 164059195
 DB_PATH = "/data/bot_data.sqlite"
 
+def mention_html(user_id: int, fallback: str = "Участник") -> str:
+    return f"<a href='tg://user?id={user_id}'>{fallback}</a>"
+
 async def handle_message(message: types.Message):
     if not message.text:
         return
+
     text = message.text.lower().strip()
     author_id = message.from_user.id
 
-    # Игнорируем сообщения от самого бота
-    if author_id == (await message.bot.get_me()).id:
+    # Игнорируем сообщения от ботов
+    if message.from_user.is_bot:
         return
 
-    # 🔓 Команды, доступные всем
+    # --- Команды для всех ---
     if text == "мой карман":
         bal = await get_balance(author_id)
         await message.reply(f"У Вас в кармане 🪙{bal} нуаров.")
         return
 
-    # ===== МОЯ РОЛЬ =====
     if text == "моя роль":
-        # Попробуем получить расширенные данные (role + image). Если функция еще не добавлена в db.py — fallback на старую get_role.
         try:
-            role_row = await get_role_with_image(author_id)  # ожидается (role_name, role_description, image_file_id) или None
-        except NameError:
+            role_row = await get_role_with_image(author_id)
+        except Exception:
             role_info = await get_role(author_id)
             role_row = (role_info.get("role"), role_info.get("description"), None) if role_info else None
 
@@ -45,15 +46,12 @@ async def handle_message(message: types.Message):
             role_name, role_desc, image_file_id = role_row
             text_response = f"🎭 *{role_name}*\n\n_{role_desc}_"
             if image_file_id:
-                # file_id из Telegram — можно отправлять напрямую
                 await message.reply_photo(photo=image_file_id, caption=text_response, parse_mode="Markdown")
             else:
-                # для куратора — попытка отправить локальную картинку как fallback
                 if author_id == KURATOR_ID and os.path.exists("images/kurator.jpg"):
                     try:
                         await message.reply_photo(photo=FSInputFile("images/kurator.jpg"), caption=text_response, parse_mode="Markdown")
                     except Exception:
-                        # если что-то пошло не так с файлом — просто текст
                         await message.reply(text_response, parse_mode="Markdown")
                 else:
                     await message.reply(text_response, parse_mode="Markdown")
@@ -61,13 +59,11 @@ async def handle_message(message: types.Message):
             await message.reply("Я вас не узнаю.")
         return
 
-    # ===== РОЛЬ (в ответ на сообщение) =====
     if text == "роль" and message.reply_to_message:
         target_id = message.reply_to_message.from_user.id
-
         try:
             role_row = await get_role_with_image(target_id)
-        except NameError:
+        except Exception:
             role_info = await get_role(target_id)
             role_row = (role_info.get("role"), role_info.get("description"), None) if role_info else None
 
@@ -105,22 +101,22 @@ async def handle_message(message: types.Message):
         await handle_rating(message)
         return
 
-    # 🔐 Проверяем ключ
+    # --- Проверка ключа ---
     user_has_key = (author_id == KURATOR_ID) or await has_key(author_id)
 
-    # 🔑 Команды с ключом
+    # --- Команды с ключом ---
     if user_has_key:
-        if text.startswith("вручить "):
+        if text.startswith(("вручить ", "выдать ")):
             await handle_vruchit(message)
             return
-        if text.startswith("взыскать "):
+        if text.startswith(("взыскать ", "отнять ")):
             await handle_otnyat(message, text, author_id)
             return
         if text == "члены клуба":
             await handle_club_members(message)
             return
 
-    # 👑 Команды только куратора
+    # --- Команды только Куратора ---
     if author_id == KURATOR_ID:
         if text.startswith("назначить ") and message.reply_to_message:
             await handle_naznachit(message)
@@ -146,84 +142,64 @@ async def handle_message(message: types.Message):
             return
 
 async def handle_photo_command(message: types.Message):
-    author_id = message.from_user.id
-    if author_id != KURATOR_ID:
+    # Только куратор устанавливает фото роли
+    if message.from_user.id != KURATOR_ID:
         return
-        
-    text = message.caption.lower().strip()
-    author_id = message.from_user.id
+    if not (message.caption and message.photo):
+        return
 
-    # Проверяем, что команда "фото роли" и что есть ответ на сообщение
+    text = message.caption.lower().strip()
     if text.startswith("фото роли") and message.reply_to_message:
         target_user_id = message.reply_to_message.from_user.id
-        photo_id = message.photo[-1].file_id  # берем самое большое фото
-
-        # Сохраняем file_id в базу
+        photo_id = message.photo[-1].file_id
         await set_role_image(target_user_id, photo_id)
-
-        # Ответ с подтверждением (без конкретного текста — можно потом добавить)
         await message.reply("Фото роли обновлено.")
-    else:
-        # Если не команда, передать дальше или игнорировать
-        pass
 
+# --- Ключевые обработчики ---
 
 async def handle_vruchit(message: types.Message):
-    author_id = message.from_user.id
-    text = message.text.strip()
-
-    # Вручение по ответу на сообщение
     if message.reply_to_message:
-        pattern = r"вручить\s+(-?\d+)"  # Разрешаем и отрицательные числа для проверки
-        m = re.match(pattern, text, re.IGNORECASE)
+        m = re.match(r"(?:вручить|выдать)\s+(-?\d+)", message.text.strip(), re.IGNORECASE)
         if not m:
             await message.reply("Обращение не по этикету Клуба. Пример: 'вручить 5'")
             return
-
         amount = int(m.group(1))
         if amount <= 0:
             await message.reply("Я не могу выдать минус.")
             return
         recipient = message.reply_to_message.from_user
-        recipient_name = recipient.username or recipient.full_name or "пользователю"
-        await change_balance(recipient.id, amount, "без причины", author_id)
-        await message.reply(f"Я выдал {amount} нуаров @{recipient_name}")
-        return
+        await change_balance(recipient.id, amount, "без причины", message.from_user.id)
+        await message.reply(
+            f"Я выдал {amount} нуаров {mention_html(recipient.id, recipient.full_name)}",
+            parse_mode="HTML"
+        )
 
 async def handle_otnyat(message: types.Message, text: str, author_id: int):
-
-    # Отнять по ответу на сообщение
     if message.reply_to_message:
-        pattern = r"взыскать\s+(-?\d+)"
-        m = re.match(pattern, text, re.IGNORECASE)
+        m = re.match(r"(?:взыскать|отнять)\s+(-?\d+)", text, re.IGNORECASE)
         if not m:
             await message.reply("Обращение не по этикету Клуба. Пример: 'отнять 3'")
             return
-
         amount = int(m.group(1))
         if amount <= 0:
             await message.reply("Я не могу отнять минус.")
             return
 
-        recipient_id = message.reply_to_message.from_user.id
-        recipient_name = message.reply_to_message.from_user.full_name
-
-        current_balance = await get_balance(recipient_id)
+        recipient = message.reply_to_message.from_user
+        current_balance = await get_balance(recipient.id)
         if amount > current_balance:
-            await message.reply(f"У {recipient_name} нет такого количества нуаров. Баланс: {current_balance}")
+            await message.reply(f"У {recipient.full_name} нет такого количества нуаров. Баланс: {current_balance}")
             return
 
-        recipient = message.reply_to_message.from_user
         await change_balance(recipient.id, -amount, "без причины", author_id)
-        await message.reply(f"Я взыскал {amount} нуаров у @{recipient.username or recipient.full_name}")
-        return
+        await message.reply(
+            f"Я взыскал {amount} нуаров у {mention_html(recipient.id, recipient.full_name)}",
+            parse_mode="HTML"
+        )
 
 async def handle_naznachit(message: types.Message):
-    author_id = message.from_user.id
-    text = message.text.strip()
     # Формат: назначить "название роли" описание роли
-    pattern = r'назначить\s+"([^"]+)"\s+(.+)'
-    m = re.match(pattern, text, re.IGNORECASE)
+    m = re.match(r'назначить\s+"([^"]+)"\s+(.+)', message.text.strip(), re.IGNORECASE)
     if not m:
         await message.reply('Я не совсем понял')
         return
@@ -235,54 +211,52 @@ async def handle_naznachit(message: types.Message):
 
     user_id = message.reply_to_message.from_user.id
     await set_role(user_id, role_name, role_desc)
-    await message.reply(f"Назначена роль '{role_name}' пользователю @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
-    return
+    uname = message.reply_to_message.from_user.username
+    fname = message.reply_to_message.from_user.full_name
+    mention = f"@{uname}" if uname else mention_html(user_id, fname)
+    await message.reply(f"Назначена роль '{role_name}' пользователю {mention}", parse_mode="HTML")
 
 async def handle_snyat_rol(message: types.Message):
-    author_id = message.from_user.id
     if not message.reply_to_message:
         await message.reply("Но кого мне лишить роли, Куратор?")
         return
     user_id = message.reply_to_message.from_user.id
     await set_role(user_id, None, None)
-    await message.reply(f"Роль снята у @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
-    return
+    uname = message.reply_to_message.from_user.username
+    fname = message.reply_to_message.from_user.full_name
+    mention = f"@{uname}" if uname else mention_html(user_id, fname)
+    await message.reply(f"Роль снята у {mention}", parse_mode="HTML")
 
 async def handle_kluch(message: types.Message):
-    author_id = message.from_user.id
     if not message.reply_to_message:
         await message.reply("Кому мне выдать ключ, Куратор?")
         return
     user_id = message.reply_to_message.from_user.id
     await grant_key(user_id)
-    await message.reply(f"Ключ от сейфа выдан @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
-    return
+    uname = message.reply_to_message.from_user.username
+    fname = message.reply_to_message.from_user.full_name
+    mention = f"@{uname}" if uname else mention_html(user_id, fname)
+    await message.reply(f"Ключ от сейфа выдан {mention}", parse_mode="HTML")
 
 async def handle_snyat_kluch(message: types.Message):
-    author_id = message.from_user.id
     if not message.reply_to_message:
         await message.reply("У кого мне отобрать ключ, Куратор?")
         return
     user_id = message.reply_to_message.from_user.id
     await revoke_key(user_id)
-    await message.reply(f"Ключ от сейфа отнят у @{message.reply_to_message.from_user.username or message.reply_to_message.from_user.full_name}")
+    uname = message.reply_to_message.from_user.username
+    fname = message.reply_to_message.from_user.full_name
+    mention = f"@{uname}" if uname else mention_html(user_id, fname)
+    await message.reply(f"Ключ от сейфа отнят у {mention}", parse_mode="HTML")
 
 async def handle_list(message: types.Message):
     try:
-        with open("Список команд.txt", "r", encoding="utf-8") as file:
-            help_text = file.read()
+        with open("Список команд.txt", "r", encoding="utf-8") as f:
+            help_text = f.read()
         await message.reply(help_text)
     except Exception as e:
-        print(f"Ошибка при чтении help.txt: {e}")
+        print(f"Ошибка при чтении списка команд: {e}")
         await message.reply("Не удалось загрузить список команд.")
-
-async def find_member_by_username(message: types.Message, username: str):
-    chat = message.chat
-    admins = await message.bot.get_chat_administrators(chat.id)
-    for admin in admins:
-        if admin.user.username and admin.user.username.lower() == username.lower():
-            return admin
-    return None
 
 async def handle_rating(message: types.Message):
     rows = await get_top_users(limit=10)
@@ -290,17 +264,16 @@ async def handle_rating(message: types.Message):
         await message.reply("Ни у кого в клубе нет нуаров.")
         return
 
-    text = "🏆 Богатейшие члены клуба Le Cadeau Noir:\n\n"
+    lines = ["🏆 Богатейшие члены клуба Le Cadeau Noir:\n"]
     for i, (user_id, balance) in enumerate(rows, start=1):
+        name = "Участник"
         try:
-            user = await message.bot.get_chat(user_id)
-            name = user.first_name
+            member = await message.bot.get_chat_member(message.chat.id, user_id)
+            name = member.user.full_name or name
         except Exception:
-            name = "Участник"
-
-        text += f"{i}. <a href='tg://user?id={user_id}'>{name}</a> — {balance} нуаров\n"
-
-    await message.reply(text, parse_mode="HTML")
+            pass
+        lines.append(f"{i}. {mention_html(user_id, name)} — {balance} нуаров")
+    await message.reply("\n".join(lines), parse_mode="HTML")
 
 async def handle_club_members(message: types.Message):
     rows = await get_all_roles()
@@ -308,48 +281,34 @@ async def handle_club_members(message: types.Message):
         await message.reply("Пока что в клубе пусто.")
         return
 
-    lines = []
+    lines = ["🎭 <b>Члены клуба:</b>\n"]
     for user_id, role in rows:
-        # Получаем username, если он есть
+        # пробуем получить имя/username из чата
+        mention = mention_html(user_id, "Участник")
         try:
-            user = await message.bot.get_chat_member(message.chat.id, user_id)
-            if user.user.username:
-                mention = f"{user.user.username}"
+            member = await message.bot.get_chat_member(message.chat.id, user_id)
+            if member.user.username:
+                mention = f"@{member.user.username}"
             else:
-                mention = f"<a href='tg://user?id={user_id}'>Участник</a>"
-        except:
-            mention = f"<a href='tg://user?id={user_id}'>Участник</a>"
-
+                mention = mention_html(user_id, member.user.full_name or "Участник")
+        except Exception:
+            pass
         lines.append(f"{mention} — <b>{role}</b>")
+    await message.reply("\n".join(lines), parse_mode="HTML")
 
-    text = "🎭 <b>Члены клуба:</b>\n\n" + "\n".join(lines)
-    await message.reply(text, parse_mode="HTML")
-
-
-async def handle_clear_db(message):
-    # Только куратор (по ID) может обнулить клуб
-    if message.from_user.id != 164059195:
+async def handle_clear_db(message: types.Message):
+    if message.from_user.id != KURATOR_ID:
         await message.reply("Только куратор может обнулить клуб.")
         return
-
-    # Удаляем файл базы данных
     try:
         await message.reply("Клуб обнуляется...")
-
-        # Закрываем соединения и удаляем файл
-        if os.path.exists("/data/bot_data.sqlite"):
-            os.remove("/data/bot_data.sqlite")
-
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
         await message.answer("Код Армагедон. Клуб обнулен. Теперь только я и вы, Куратор.")
-
-        # Перезапускаем процесс
         os.execv(sys.executable, [sys.executable] + sys.argv)
-        return
-
     except Exception as e:
         await message.reply(f"Ошибка при обнулении: {e}")
 
-# Обнулить баланс конкретного участника
 async def handle_obnulit_balans(message: types.Message):
     if not message.reply_to_message:
         await message.reply("Чтобы обнулить баланс, ответь на сообщение участника.")
@@ -358,7 +317,6 @@ async def handle_obnulit_balans(message: types.Message):
     await reset_user_balance(user_id)
     await message.reply("Баланс участника обнулён.")
 
-# Обнулить балансы всех участников
 async def handle_obnulit_balansy(message: types.Message):
     await reset_all_balances()
     await message.reply("Все балансы обнулены.")
