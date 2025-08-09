@@ -101,6 +101,10 @@ async def handle_message(message: types.Message):
         await handle_rating(message)
         return
 
+    if text == "члены клуба":
+        await handle_club_members(message)
+        return
+
     # --- Проверка ключа ---
     user_has_key = (author_id == KURATOR_ID) or await has_key(author_id)
 
@@ -111,9 +115,6 @@ async def handle_message(message: types.Message):
             return
         if text.startswith(("взыскать ", "отнять ")):
             await handle_otnyat(message, text, author_id)
-            return
-        if text == "члены клуба":
-            await handle_club_members(message)
             return
 
     # --- Команды только Куратора ---
