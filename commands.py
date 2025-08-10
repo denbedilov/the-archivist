@@ -110,6 +110,10 @@ async def handle_message(message: types.Message):
         await handle_key_holders(message)
         return
 
+    if text.startswith("передать "):
+        await handle_peredat(message)
+        return
+
     # --- Проверка ключа ---
     user_has_key = (author_id == KURATOR_ID) or await has_key(author_id)
 
@@ -343,3 +347,46 @@ async def handle_key_holders(message: types.Message):
             pass
         lines.append(f"{mention_html(user_id, name)}")
     await message.reply("\n".join(lines), parse_mode="HTML")
+
+async def handle_peredat(message: types.Message):
+    # Команда работает ТОЛЬКО в ответ на сообщение получателя
+    if not message.reply_to_message:
+        await message.reply("Чтобы передать нуары, ответьте на сообщение получателя. Пример: 'передать 10'")
+        return
+
+    m = re.match(r"передать\s+(\d+)", message.text.strip(), re.IGNORECASE)
+    if not m:
+        await message.reply("Обращение не по этикету Клуба. Пример: 'передать 10'")
+        return
+
+    amount = int(m.group(1))
+    if amount <= 0:
+        await message.reply("Я не могу передать минус.")
+        return
+
+    giver_id = message.from_user.id
+    recipient = message.reply_to_message.from_user
+    recipient_id = recipient.id
+
+    # Нельзя переводить себе
+    if giver_id == recipient_id:
+        await message.reply("Нельзя передать нуары самому себе.")
+        return
+
+    # Проверяем баланс дарителя
+    balance = await get_balance(giver_id)
+    if amount > balance:
+        await message.reply(f"У Вас недостаточно нуаров. Баланс: {balance}")
+        return
+
+    # Списываем у дарителя и зачисляем получателю
+    await change_balance(giver_id, -amount, "передача", giver_id)
+    await change_balance(recipient_id, amount, "передача", giver_id)
+
+    giver_name = message.from_user.full_name
+    recipient_name = recipient.full_name
+
+    await message.reply(
+        f"Я передал {amount} нуаров от {mention_html(giver_id, giver_name)} к {mention_html(recipient_id, recipient_name)}",
+        parse_mode="HTML"
+    )
