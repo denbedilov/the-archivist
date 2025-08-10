@@ -150,6 +150,9 @@ async def handle_message(message: types.Message):
         if text.startswith("обнулить баланс"):
             await handle_obnulit_balans(message)
             return
+        if text =="карман" and message.reply_to_message:
+            await handle_kurator_karman(message)
+            return
 
 async def handle_photo_command(message: types.Message):
     # Только куратор устанавливает фото роли
@@ -388,5 +391,19 @@ async def handle_peredat(message: types.Message):
 
     await message.reply(
         f"Я передал {amount} нуаров от {mention_html(giver_id, giver_name)} к {mention_html(recipient_id, recipient_name)}",
+        parse_mode="HTML"
+    )
+
+async def handle_kurator_karman(message: types.Message):
+    # Работает только в ответ на сообщение
+    if not message.reply_to_message:
+        await message.reply("Этикет Клуба требует ответа на сообщение участника.")
+        return
+
+    target = message.reply_to_message.from_user
+    balance = await get_balance(target.id)
+
+    await message.reply(
+        f"💼 {mention_html(target.id, target.full_name)} хранит в своём кармане {balance} нуаров.",
         parse_mode="HTML"
     )
