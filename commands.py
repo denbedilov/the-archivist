@@ -9,7 +9,8 @@ from db import (
     get_balance, change_balance, set_role, get_role,
     grant_key, revoke_key, has_key, get_last_history,
     get_top_users, get_all_roles, reset_user_balance,
-    reset_all_balances, set_role_image, get_role_with_image
+    reset_all_balances, set_role_image, get_role_with_image,
+    get_key_holders
 )
 
 KURATOR_ID = 164059195
@@ -103,6 +104,10 @@ async def handle_message(message: types.Message):
 
     if text == "члены клуба":
         await handle_club_members(message)
+        return
+
+    if text == "хранители ключа":
+        await handle_key_holders(message)
         return
 
     # --- Проверка ключа ---
@@ -321,3 +326,20 @@ async def handle_obnulit_balans(message: types.Message):
 async def handle_obnulit_balansy(message: types.Message):
     await reset_all_balances()
     await message.reply("Все балансы обнулены.")
+
+async def handle_key_holders(message: types.Message):
+    user_ids = await get_key_holders()
+    if not user_ids:
+        await message.reply("Пока ни у кого нет ключа.")
+        return
+
+    lines = ["🗝️ <b>Хранители ключа:</b>\n"]
+    for user_id in user_ids:
+        name = "Участник"
+        try:
+            member = await message.bot.get_chat_member(message.chat.id, user_id)
+            name = member.user.full_name or name
+        except Exception:
+            pass
+        lines.append(f"{mention_html(user_id, name)}")
+    await message.reply("\n".join(lines), parse_mode="HTML")

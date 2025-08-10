@@ -208,3 +208,14 @@ async def get_all_roles():
             WHERE role_name IS NOT NULL AND TRIM(role_name) != ''
         """) as cur:
             return await cur.fetchall()
+
+# --- Держатели ключа ---
+async def get_key_holders():
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("""
+            SELECT user_id FROM users
+            WHERE key = 1
+            ORDER BY user_id ASC
+        """) as cur:
+            rows = await cur.fetchall()
+            return [r[0] for r in rows]
