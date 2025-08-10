@@ -150,7 +150,7 @@ async def handle_message(message: types.Message):
         if text.startswith("обнулить баланс"):
             await handle_obnulit_balans(message)
             return
-        if text =="карман" and message.reply_to_message:
+        if text =="карман":
             await handle_kurator_karman(message)
             return
 
