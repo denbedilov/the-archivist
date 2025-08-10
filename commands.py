@@ -125,6 +125,9 @@ async def handle_message(message: types.Message):
         if text.startswith(("взыскать ", "отнять ")):
             await handle_otnyat(message, text, author_id)
             return
+        if text =="карман":
+            await handle_kurator_karman(message)
+            return
 
     # --- Команды только Куратора ---
     if author_id == KURATOR_ID:
@@ -150,9 +153,7 @@ async def handle_message(message: types.Message):
         if text.startswith("обнулить баланс"):
             await handle_obnulit_balans(message)
             return
-        if text =="карман":
-            await handle_kurator_karman(message)
-            return
+
 
 async def handle_photo_command(message: types.Message):
     # Только куратор устанавливает фото роли
