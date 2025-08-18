@@ -114,6 +114,10 @@ async def handle_message(message: types.Message):
         await handle_peredat(message)
         return
 
+    if text.startswith("ставлю")
+        await handle_kubik(message)
+        return
+
     # --- Проверка ключа ---
     user_has_key = (author_id == KURATOR_ID) or await has_key(author_id)
 
@@ -408,3 +412,43 @@ async def handle_kurator_karman(message: types.Message):
         f"💼 {mention_html(target.id, target.full_name)} хранит в своём кармане {balance} нуаров.",
         parse_mode="HTML"
     )
+
+async def handle_kubik(message: types.Message):
+
+    m = re.match(r"^\s*ставлю\s+(\d+)\s+на\s+(?:🎲|кубик)\s*$", message.text.strip(), re.IGNORECASE)
+    if not m:
+        await message.reply("Обращение не по этикету Клуба. Пример: 'Ставлю 10'")
+        return
+
+    amount = int(m.group(1))
+    if amount <= 0:
+        await message.reply("Я не могу принять отрицательную ставку.")
+        return
+
+    gambler_id = message.from_user.id
+    gambler_name = message.from_user.full_name
+
+    # Проверяем баланс лудика
+    balance = await get_balance(gambler_id)
+    if amount > balance:
+        await message.reply(f"У Вас недостаточно нуаров. Баланс: {balance}")
+        return
+
+    # Бросаем кубик сервером Телеграма
+    sent: types.Message = await message.answer_dice(emoji="🎲")
+    roll_value = sent.dice.value  # 1..6
+
+    if roll_value == 6:
+        await change_balance(gambler_id, amount*2, "ставка", gambler_id)
+        await message.reply(
+            f"Фортуна на вашей стороне,{mention_html(gambler_id, gambler_name)}. Вы получаете {amount*2} нуаров",
+            parse_mode="HTML"
+        )
+    else:
+        await change_balance(gambler_id, -amount, "ставка", gambler_id)
+         await message.reply(
+            f"Ставки погубят вас, {mention_html(gambler_id, gambler_name)}. Вы потеряли {amount} нуаров.",
+            parse_mode="HTML"
+        )
+
+
