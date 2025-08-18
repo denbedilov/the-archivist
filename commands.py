@@ -188,7 +188,7 @@ async def handle_vruchit(message: types.Message):
         recipient = message.reply_to_message.from_user
         await change_balance(recipient.id, amount, "без причины", message.from_user.id)
         await message.reply(
-            f"Я выдал {amount} нуаров {mention_html(recipient.id, recipient.full_name)}",
+            f"🧮Я выдал {amount} нуаров {mention_html(recipient.id, recipient.full_name)}",
             parse_mode="HTML"
         )
 
@@ -211,7 +211,7 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
 
         await change_balance(recipient.id, -amount, "без причины", author_id)
         await message.reply(
-            f"Я взыскал {amount} нуаров у {mention_html(recipient.id, recipient.full_name)}",
+            f"🧮Я взыскал {amount} нуаров у {mention_html(recipient.id, recipient.full_name)}",
             parse_mode="HTML"
         )
 
