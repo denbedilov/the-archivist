@@ -179,7 +179,7 @@ async def handle_vruchit(message: types.Message):
     if message.reply_to_message:
         m = re.match(r"(?:вручить|выдать)\s+(-?\d+)", message.text.strip(), re.IGNORECASE)
         if not m:
-            await message.reply("Обращение не по этикету Клуба. Пример: 'вручить 5'")
+            await message.reply("Обращение не по этикету Клуба. Пример: 'вручить|выдать 5'")
             return
         amount = int(m.group(1))
         if amount <= 0:
@@ -196,7 +196,7 @@ async def handle_otnyat(message: types.Message, text: str, author_id: int):
     if message.reply_to_message:
         m = re.match(r"(?:взыскать|отнять)\s+(-?\d+)", text, re.IGNORECASE)
         if not m:
-            await message.reply("Обращение не по этикету Клуба. Пример: 'отнять 3'")
+            await message.reply("Обращение не по этикету Клуба. Пример: 'взыскать|отнять 3'")
             return
         amount = int(m.group(1))
         if amount <= 0:
@@ -254,7 +254,7 @@ async def handle_kluch(message: types.Message):
     uname = message.reply_to_message.from_user.username
     fname = message.reply_to_message.from_user.full_name
     mention = f"@{uname}" if uname else mention_html(user_id, fname)
-    await message.reply(f"Ключ от сейфа выдан {mention}", parse_mode="HTML")
+    await message.reply(f"🗝Ключ от сейфа выдан {mention}", parse_mode="HTML")
 
 async def handle_snyat_kluch(message: types.Message):
     if not message.reply_to_message:
@@ -265,7 +265,7 @@ async def handle_snyat_kluch(message: types.Message):
     uname = message.reply_to_message.from_user.username
     fname = message.reply_to_message.from_user.full_name
     mention = f"@{uname}" if uname else mention_html(user_id, fname)
-    await message.reply(f"Ключ от сейфа отнят у {mention}", parse_mode="HTML")
+    await message.reply(f"🗝Ключ от сейфа отнят у {mention}", parse_mode="HTML")
 
 async def handle_list(message: types.Message):
     try:
@@ -282,7 +282,7 @@ async def handle_rating(message: types.Message):
         await message.reply("Ни у кого в клубе нет нуаров.")
         return
 
-    lines = ["🏆 Богатейшие члены клуба Le Cadeau Noir:\n"]
+    lines = ["💰 Богатейшие члены клуба Le Cadeau Noir:\n"]
     for i, (user_id, balance) in enumerate(rows, start=1):
         name = "Участник"
         try:
@@ -319,10 +319,10 @@ async def handle_clear_db(message: types.Message):
         await message.reply("Только куратор может обнулить клуб.")
         return
     try:
-        await message.reply("Клуб обнуляется...")
+        await message.reply("🗑Клуб обнуляется...")
         if os.path.exists(DB_PATH):
             os.remove(DB_PATH)
-        await message.answer("Код Армагедон. Клуб обнулен. Теперь только я и вы, Куратор.")
+        await message.answer("💢Код Армагедон. Клуб обнулен. Теперь только я и вы, Куратор.")
         os.execv(sys.executable, [sys.executable] + sys.argv)
     except Exception as e:
         await message.reply(f"Ошибка при обнулении: {e}")
@@ -333,11 +333,11 @@ async def handle_obnulit_balans(message: types.Message):
         return
     user_id = message.reply_to_message.from_user.id
     await reset_user_balance(user_id)
-    await message.reply("Баланс участника обнулён.")
+    await message.reply("✅Баланс участника обнулён.")
 
 async def handle_obnulit_balansy(message: types.Message):
     await reset_all_balances()
-    await message.reply("Все балансы обнулены.")
+    await message.reply("✅Все балансы обнулены.")
 
 async def handle_key_holders(message: types.Message):
     user_ids = await get_key_holders()
@@ -395,7 +395,7 @@ async def handle_peredat(message: types.Message):
     recipient_name = recipient.full_name
 
     await message.reply(
-        f"Я передал {amount} нуаров от {mention_html(giver_id, giver_name)} к {mention_html(recipient_id, recipient_name)}",
+        f"💸Я передал {amount} нуаров от {mention_html(giver_id, giver_name)} к {mention_html(recipient_id, recipient_name)}",
         parse_mode="HTML"
     )
 
@@ -431,7 +431,7 @@ async def handle_kubik(message: types.Message):
     # Проверяем баланс лудика
     balance = await get_balance(gambler_id)
     if amount > balance:
-        await message.reply(f"У Вас недостаточно нуаров. Баланс: {balance}")
+        await message.reply(f"🔍У Вас недостаточно нуаров. Баланс: {balance}")
         return
 
     # Бросаем кубик сервером Телеграма
@@ -442,13 +442,13 @@ async def handle_kubik(message: types.Message):
     if roll_value == 6:
         await change_balance(gambler_id, amount*3, "ставка", gambler_id)
         await message.reply(
-            f"Фортуна на вашей стороне,{mention_html(gambler_id, gambler_name)}. Вы получаете {amount*3} нуаров",
+            f"🎉Фортуна на вашей стороне,{mention_html(gambler_id, gambler_name)}. Вы получаете 🪙{amount*3} нуаров",
             parse_mode="HTML"
         )
     else:
         await change_balance(gambler_id, -amount, "ставка", gambler_id)
         await message.reply(
-            f"Ставки погубят вас, {mention_html(gambler_id, gambler_name)}. Вы потеряли {amount} нуаров.",
+            f"🪦Ставки погубят вас, {mention_html(gambler_id, gambler_name)}. Вы потеряли 🪙{amount} нуаров.",
             parse_mode="HTML"
         )
 
