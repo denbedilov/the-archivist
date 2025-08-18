@@ -417,7 +417,7 @@ async def handle_kubik(message: types.Message):
 
     m = re.match(r"^\s*ставлю\s+(\d+)\s+на\s+(?:🎲|кубик)\s*$", message.text.strip(), re.IGNORECASE)
     if not m:
-        await message.reply("Обращение не по этикету Клуба. Пример: 'Ставлю 10'")
+        await message.reply("Обращение не по этикету Клуба. Пример: 'Ставлю 10 на 🎲|кубик'")
         return
 
     amount = int(m.group(1))
