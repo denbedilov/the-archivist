@@ -439,9 +439,9 @@ async def handle_kubik(message: types.Message):
     roll_value = sent.dice.value  # 1..6
 
     if roll_value == 6:
-        await change_balance(gambler_id, amount*2, "ставка", gambler_id)
+        await change_balance(gambler_id, amount*6, "ставка", gambler_id)
         await message.reply(
-            f"Фортуна на вашей стороне,{mention_html(gambler_id, gambler_name)}. Вы получаете {amount*2} нуаров",
+            f"Фортуна на вашей стороне,{mention_html(gambler_id, gambler_name)}. Вы получаете {amount*6} нуаров",
             parse_mode="HTML"
         )
     else:
