@@ -446,7 +446,7 @@ async def handle_kubik(message: types.Message):
         )
     else:
         await change_balance(gambler_id, -amount, "ставка", gambler_id)
-         await message.reply(
+        await message.reply(
             f"Ставки погубят вас, {mention_html(gambler_id, gambler_name)}. Вы потеряли {amount} нуаров.",
             parse_mode="HTML"
         )
