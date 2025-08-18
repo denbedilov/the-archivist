@@ -438,6 +438,7 @@ async def handle_kubik(message: types.Message):
     sent: types.Message = await message.answer_dice(emoji="🎲")
     roll_value = sent.dice.value  # 1..6
 
+    await asyncio.sleep(3.5)
     if roll_value == 6:
         await change_balance(gambler_id, amount*3, "ставка", gambler_id)
         await message.reply(
