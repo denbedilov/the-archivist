@@ -114,7 +114,7 @@ async def handle_message(message: types.Message):
         await handle_peredat(message)
         return
 
-    if text.startswith("ставлю")
+    if text.startswith("ставлю"):
         await handle_kubik(message)
         return
 
