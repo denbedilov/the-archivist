@@ -26,97 +26,42 @@ async def handle_message(message: types.Message):
     text = message.text.lower().strip()
     author_id = message.from_user.id
 
-    # Игнорируем сообщения от ботов
     if message.from_user.is_bot:
         return
 
-    # --- Команды для всех ---
-    if text == "мой карман":
-        bal = await get_balance(author_id)
-        await message.reply(f"У Вас в кармане 🪙{bal} нуаров.")
-        return
 
-    if text == "моя роль":
-        try:
-            role_row = await get_role_with_image(author_id)
-        except Exception:
-            role_info = await get_role(author_id)
-            role_row = (role_info.get("role"), role_info.get("description"), None) if role_info else None
-
-        if role_row:
-            role_name, role_desc, image_file_id = role_row
-            text_response = f"🎭 *{role_name}*\n\n_{role_desc}_"
-            if image_file_id:
-                await message.reply_photo(photo=image_file_id, caption=text_response, parse_mode="Markdown")
-            else:
-                if author_id == KURATOR_ID and os.path.exists("images/kurator.jpg"):
-                    try:
-                        await message.reply_photo(photo=FSInputFile("images/kurator.jpg"), caption=text_response, parse_mode="Markdown")
-                    except Exception:
-                        await message.reply(text_response, parse_mode="Markdown")
-                else:
-                    await message.reply(text_response, parse_mode="Markdown")
-        else:
-            await message.reply("Я вас не узнаю.")
-        return
-
-    if text == "роль" and message.reply_to_message:
-        target_id = message.reply_to_message.from_user.id
-        try:
-            role_row = await get_role_with_image(target_id)
-        except Exception:
-            role_info = await get_role(target_id)
-            role_row = (role_info.get("role"), role_info.get("description"), None) if role_info else None
-
-        if role_row:
-            role_name, role_desc, image_file_id = role_row
-            text_response = f"🎭 *{role_name}*\n\n_{role_desc}_"
-            if image_file_id:
-                await message.reply_photo(photo=image_file_id, caption=text_response, parse_mode="Markdown")
-            else:
-                await message.reply(text_response, parse_mode="Markdown")
-        else:
-            await message.reply("Я не знаю кто это.")
-        return
-
-    if text == "список команд":
-        await handle_list(message)
-        return
-
-    if text == "клуб":
-        await message.answer(
-            "🎩 <b>Клуб Le Cadeau Noir</b>\n"
-            "<i>В переводе с французского — «Чёрный подарок»</i>\n\n"
-            "🌑 <b>Концепция:</b>\n"
-            "Закрытый элегантный Telegram-клуб для ценителей стиля, таинственности и криптоподарков.\n"
-            "Участники клуба обмениваются виртуальными (и иногда реальными) подарками.\n"
-            "Каждый подарок — это не просто жест, а символ уважения, флирта или признательности.\n\n"
-            "🎓 <b>Этикет:</b>\n"
-            "Всё происходит в атмосфере вежливости, загадочности и утончённого шика.\n"
-            "Прямые предложения не приветствуются — всё через намёки, ролевую игру и символы.",
-            parse_mode="HTML"
-        )
-        return
-
-    if text == "рейтинг клуба":
-        await handle_rating(message)
-        return
-
-    if text == "члены клуба":
-        await handle_club_members(message)
-        return
-
-    if text == "хранители ключа":
-        await handle_key_holders(message)
-        return
-
-    if text.startswith("передать "):
-        await handle_peredat(message)
-        return
-
-    if text.startswith("ставлю"):
-        await handle_kubik(message)
-        return
+    # --- Команды для всех участников ---
+    match text:
+        case "мой карман":
+            await handle_moy_karman(message)
+            return
+        case "моя роль":
+            await handle_moya_rol(message)
+            return
+        case "роль" if message.reply_to_message:
+            await handle_rol(message)
+            return
+        case "список команд":
+            await handle_list(message)
+            return
+        case "клуб":
+            await handle_klub(message)
+            return
+        case "рейтинг клуба":
+            await handle_rating(message)
+            return
+        case "члены клуба":
+            await handle_club_members(message)
+            return
+        case "хранители ключа":
+            await handle_key_holders(message)
+            return
+        case _ if text.startswith("передать "):
+            await handle_peredat(message)
+            return
+        case _ if text.startswith("ставлю"):
+            await handle_kubik(message)
+            return
 
     # --- Проверка ключа ---
     user_has_key = (author_id == KURATOR_ID) or await has_key(author_id)
@@ -129,7 +74,7 @@ async def handle_message(message: types.Message):
         if text.startswith(("взыскать ", "отнять ")):
             await handle_otnyat(message, text, author_id)
             return
-        if text =="карман":
+        if text == "карман":
             await handle_kurator_karman(message)
             return
 
@@ -157,6 +102,66 @@ async def handle_message(message: types.Message):
         if text.startswith("обнулить баланс"):
             await handle_obnulit_balans(message)
             return
+
+async def handle_moy_karman(message: types.Message):
+    bal = await get_balance(message.from_user.id)
+    await message.reply(f"У Вас в кармане 🪙{bal} нуаров.")
+
+async def handle_moya_rol(message: types.Message):
+    author_id = message.from_user.id
+    try:
+        role_row = await get_role_with_image(author_id)
+    except Exception:
+        role_info = await get_role(author_id)
+        role_row = (role_info.get("role"), role_info.get("description"), None) if role_info else None
+
+    if role_row:
+        role_name, role_desc, image_file_id = role_row
+        text_response = f"🎭 *{role_name}*\n\n_{role_desc}_"
+        if image_file_id:
+            await message.reply_photo(photo=image_file_id, caption=text_response, parse_mode="Markdown")
+        else:
+            if author_id == KURATOR_ID and os.path.exists("images/kurator.jpg"):
+                try:
+                    await message.reply_photo(photo=FSInputFile("images/kurator.jpg"), caption=text_response, parse_mode="Markdown")
+                except Exception:
+                    await message.reply(text_response, parse_mode="Markdown")
+            else:
+                await message.reply(text_response, parse_mode="Markdown")
+    else:
+        await message.reply("Я вас не узнаю.")
+
+async def handle_rol(message: types.Message):
+    target_id = message.reply_to_message.from_user.id
+    try:
+        role_row = await get_role_with_image(target_id)
+    except Exception:
+        role_info = await get_role(target_id)
+        role_row = (role_info.get("role"), role_info.get("description"), None) if role_info else None
+
+    if role_row:
+        role_name, role_desc, image_file_id = role_row
+        text_response = f"🎭 *{role_name}*\n\n_{role_desc}_"
+        if image_file_id:
+            await message.reply_photo(photo=image_file_id, caption=text_response, parse_mode="Markdown")
+        else:
+            await message.reply(text_response, parse_mode="Markdown")
+    else:
+        await message.reply("Я не знаю кто это.")
+
+async def handle_klub(message: types.Message):
+    await message.answer(
+        "🎩 <b>Клуб Le Cadeau Noir</b>\n"
+        "<i>В переводе с французского — «Чёрный подарок»</i>\n\n"
+        "🌑 <b>Концепция:</b>\n"
+        "Закрытый элегантный Telegram-клуб для ценителей стиля, таинственности и криптоподарков.\n"
+        "Участники клуба обмениваются виртуальными (и иногда реальными) подарками.\n"
+        "Каждый подарок — это не просто жест, а символ уважения, флирта или признательности.\n\n"
+        "🎓 <b>Этикет:</b>\n"
+        "Всё происходит в атмосфере вежливости, загадочности и утончённого шика.\n"
+        "Прямые предложения не приветствуются — всё через намёки, ролевую игру и символы.",
+        parse_mode="HTML"
+    )
 
 
 async def handle_photo_command(message: types.Message):
